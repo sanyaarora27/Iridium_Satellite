@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Environment
+.venv/
+env/
+
+# Large data/output files
+data/
+outputs/
+
+# VS Code
+.vscode/ls -la
