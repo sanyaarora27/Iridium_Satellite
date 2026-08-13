@@ -1,31 +1,10 @@
 """
-five_satellites.py
-
-We chose the 5 most-sampled satellite IDs from the dataset:
+5 most-sampled satellite IDs from the dataset:
     92, 85, 87, 51, 109
-Each has 1,180-1,282 messages, so class balance is good.
-
-For each satellite, we produce 5 diagnostic views:
-    1. I (in-phase / real part) over time
-    2. Q (quadrature / imaginary part) over time
-    3. Amplitude = sqrt(I^2 + Q^2)
-    4. Phase = arctan2(Q, I)
-    5. FFT magnitude spectrum
-
-The result is a 5-row x 5-column grid figure that lets you visually
-compare all satellites.
-
-WHY WE DO IT THIS WAY
----------------------
+Each has 1,180-1,282 messages.
 The dataset stores IQ samples across 5 segment files:
     samples_000.npy, samples_001.npy, ..., samples_004.npy
 Each is ~880 MB (10,000 messages of 11,000 samples of I+Q float32).
-
-To avoid loading everything (4.4 GB in RAM), we:
-  1. First load only the small ra_sat_*.npy files (all satellite IDs).
-  2. For each target satellite, find the FIRST message belonging to it
-     and note which segment file it lives in.
-  3. Load only the segment files we actually need.
 """
 
 from pathlib import Path
@@ -171,8 +150,6 @@ for loc in message_locations:
 
 
 # --- STEP 5: BUILD THE 5x5 GRID FIGURE ------------------------------------
-# Rows are satellites (5 of them), columns are the 5 views.
-# The result is a 5x5 grid of subplots.
 
 n_satellites = len(TARGET_SATELLITES)
 n_views      = 5

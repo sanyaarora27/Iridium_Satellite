@@ -1,4 +1,4 @@
-"""
+diagram """
 06_diagnose_features.py
 =======================
 
@@ -41,11 +41,6 @@ CHECK 3 - DISCRIMINATIVE POWER (ANOVA F-test).
 CHECK 4 - VISUAL: PCA of the feature space, coloured by satellite.
     If clusters exist, you'll see them. If it's one undifferentiated
     blob, that is what chance-level accuracy looks like.
-
-USAGE
------
-From the project root:
-    python scripts/06_diagnose_features.py
 """
 
 from pathlib import Path

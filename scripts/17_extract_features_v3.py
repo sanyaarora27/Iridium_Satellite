@@ -314,7 +314,7 @@ def main() -> None:
     df.to_csv(out, index=False)
     print(f"\nSaved: {out}")
     print(f"Shape: {df.shape}")
-    print("\nNext: python scripts/17_openset_and_domain.py")
+    print("\nNext: python scripts/21_openset_and_domain.py")
     print("=" * 72)
 
 

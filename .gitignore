@@ -1,17 +1,13 @@
-# macOS
+
+# Generated Results
+tables/
+figures/
+reports/
+# OS / IDE cruft
 .DS_Store
-
-# Python
+scripts/.DS_Store
 __pycache__/
-*.pyc
+.qodo/
 
-# Environment
-.venv/
-env/
-
-# Large data/output files
+# Raw IQ data - large, third-party, not for redistribution
 data/
-outputs/
-
-# VS Code
-.vscode/ls -la

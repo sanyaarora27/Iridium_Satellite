@@ -80,6 +80,7 @@ from sklearn.metrics import (
 from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
@@ -98,6 +99,7 @@ for d in (OUTPUT_TABLES, OUTPUT_FIGURES, OUTPUT_REPORTS):
 RANDOM_STATE = 42     # fixed seed -> reproducible split and models
 TEST_FRACTION = 0.20  # 80% train / 20% test
 CV_FOLDS = 5
+N_BOOTSTRAP = 1000
 
 # The four classifiers required by the task list, plus three deliberate
 # additions that each answer a specific question:
@@ -148,6 +150,9 @@ MODELS = [
      KNeighborsClassifier(n_neighbors=5), True),
     ("Gaussian Naive Bayes",
      GaussianNB(), False),
+    ("Neural Net (MLP)",
+     MLPClassifier(hidden_layer_sizes=(64,), max_iter=500,
+                   random_state=RANDOM_STATE), True),
 ]
 
 
@@ -158,6 +163,25 @@ def build_pipeline(estimator, needs_scaling: bool) -> Pipeline:
         steps.append(("scaler", StandardScaler()))
     steps.append(("model", estimator))
     return Pipeline(steps)
+
+
+def bootstrap_accuracy_ci(y_true: np.ndarray,
+                          y_pred: np.ndarray,
+                          n_resamples: int = N_BOOTSTRAP,
+                          seed: int = RANDOM_STATE) -> tuple[float, float]:
+    """Return a 95% bootstrap confidence interval for test accuracy."""
+    rng = np.random.default_rng(seed)
+    n = len(y_true)
+    scores = np.empty(n_resamples, dtype=float)
+
+    for i in range(n_resamples):
+        idx = rng.integers(0, n, size=n)
+        scores[i] = accuracy_score(y_true[idx], y_pred[idx])
+
+    return (
+        float(np.percentile(scores, 2.5)),
+        float(np.percentile(scores, 97.5)),
+    )
 
 
 # ─── MAIN ────────────────────────────────────────────────────────────────────
@@ -212,13 +236,17 @@ def main() -> None:
         pipe.fit(X_train, y_train)
         y_pred = pipe.predict(X_test)
         acc = accuracy_score(y_test, y_pred)
+        ci_low, ci_high = bootstrap_accuracy_ci(y_test, y_pred)
         # Macro F1: F1 computed per class then averaged with EQUAL class
         # weight - so a model can't hide a badly-classified satellite
         # behind good performance on the others.
         macro_f1 = f1_score(y_test, y_pred, average="macro")
         elapsed = time.time() - t0
-        print(f"  Test accuracy: {acc:.4f}   Macro F1: {macro_f1:.4f}"
-              f"   ({elapsed:.1f} s)")
+        print(
+            f"  Test accuracy: {acc:.4f} "
+            f"(95% CI [{ci_low:.4f}, {ci_high:.4f}])   "
+            f"Macro F1: {macro_f1:.4f}   ({elapsed:.1f} s)"
+        )
 
         fitted[name] = pipe
         results.append({
@@ -227,6 +255,8 @@ def main() -> None:
             "cv_accuracy_mean": round(cv_scores.mean(), 4),
             "cv_accuracy_std": round(cv_scores.std(), 4),
             "test_accuracy": round(acc, 4),
+            "accuracy_ci_low": round(ci_low, 4),
+            "accuracy_ci_high": round(ci_high, 4),
             "test_macro_f1": round(macro_f1, 4),
             "train_eval_seconds": round(elapsed, 1),
         })

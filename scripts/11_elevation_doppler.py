@@ -4,7 +4,6 @@
 
 PURPOSE
 -------
-Steps 11 and 12 of the 29 June task list.
 
   STEP 12 - ELEVATION AND DOPPLER
     The dataset has no elevation column, but it does contain the satellite's

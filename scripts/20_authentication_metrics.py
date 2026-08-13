@@ -1,5 +1,4 @@
 """
-12_authentication_metrics.py
 ============================
 
 PURPOSE
@@ -287,6 +286,10 @@ def main() -> None:
     print(f"  Ratio: {best['eer'] / SATIQ_EER:.1f}x worse")
 
     print("\n" + "-" * 72)
+    for res in results:
+        fname = res["label"].replace(" ", "_")
+        res["curve"].to_csv(OUT_TABLES / f"det_curve_{fname}.csv", index=False)
+
     print("Writing outputs...")
     out = []
     for res in results:

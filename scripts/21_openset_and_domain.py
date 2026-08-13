@@ -1,5 +1,4 @@
 """
-17_openset_and_domain.py
 ========================
 
 PURPOSE
@@ -42,7 +41,7 @@ the existing pipeline does not perform.
 
 USAGE
 -----
-    python scripts/17_openset_and_domain.py
+    python scripts/21_openset_and_domain.py
 
 Requires scripts 03, 13 and 16 to have been run.
 

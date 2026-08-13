@@ -119,45 +119,86 @@ def save_summary_json(summary: dict, output_path: Path) -> None:
 def save_dataset_description_md(summary: dict, output_path: Path) -> None:
 
     # Pull useful values out for readability
-    samples_info  = summary["columns"].get("samples", {})
+    samples_info = summary["columns"].get("samples", {})
     samples_shape = samples_info.get("per_segment_shape", ["?", "?", "?"])
-    total_msgs    = summary["total_messages"]
-    n_sats        = summary["n_unique_satellites"]
+    total_msgs = summary["total_messages"]
+    n_sats = summary["n_unique_satellites"]
 
-    # Compose the markdown document
-    md = f
+    # Start the markdown document
+    md = f"""# Iridium Dataset Description
 
-    # Add a table row per column
+## Dataset overview
+
+- **Data directory:** `{summary["data_directory"]}`
+- **Total number of messages:** {total_msgs:,}
+- **Number of unique satellites:** {n_sats}
+- **Number of metadata columns:** {len(summary["columns"])}
+
+## Dataset columns
+
+| Column | Number of segments | Shape per segment | Data type | Total size (MB) |
+|---|---:|---|---|---:|
+"""
+
+    # Add one table row per column
     for column in sorted(summary["columns"].keys()):
         info = summary["columns"][column]
-        md += (f"| `{column}` "
-               f"| {info['n_segments']} "
-               f"| {info['per_segment_shape']} "
-               f"| {info['dtype']} "
-               f"| {info['total_size_mb']} |\n")
 
-    md += f
-    for i, (sat_id, count) in enumerate(summary["top_satellites"][:10], start=1):
-        md += f"| {i} | {sat_id} | {count:,} |\n"
+        md += (
+            f"| `{column}` "
+            f"| {info['n_segments']} "
+            f"| {info['per_segment_shape']} "
+            f"| {info['dtype']} "
+            f"| {info['total_size_mb']} |\n"
+        )
 
+    # Add satellite-count table heading
     md += f"""
 
+## Top 10 most-sampled satellites
+
+| Rank | Satellite ID | Message count |
+|---:|---:|---:|
+"""
+
+    # Add one row for each of the top 10 satellites
+    for i, (sat_id, count) in enumerate(
+        summary["top_satellites"][:10],
+        start=1
+    ):
+        md += f"| {i} | {sat_id} | {count:,} |\n"
+
+    # Add final dataset statistics
+    md += f"""
+
+## Satellite distribution
+
 - **Mean messages per satellite:** {total_msgs / n_sats:.0f}
-- **Maximum:** {summary['max_messages_per_sat']:,}
-- **Minimum:** {summary['min_messages_per_sat']:,}
+- **Maximum messages for one satellite:** {summary['max_messages_per_sat']:,}
+- **Minimum messages for one satellite:** {summary['min_messages_per_sat']:,}
 
 ## One IQ sample
 
-A single IQ sample is one Iridium Ring Alert message header.
-Each sample has shape `{samples_shape[1:] if len(samples_shape) > 1 else "see table above"}`
+A single IQ sample represents one Iridium Ring Alert message header.
+
+Each sample has shape
+`{samples_shape[1:] if len(samples_shape) > 1 else "see table above"}`
 and dtype `{samples_info.get('dtype', '?')}`.
+
+The shape `[11000, 2]` means that each message contains:
+
+- 11,000 time-domain sample points
+- two values per point: the in-phase component `I` and quadrature component `Q`
+
+## Dataset size
 
 - **Number of messages:** {total_msgs:,}
 - **Number of unique satellites:** {n_sats}
-- **Total disk size:** approximately
-  {sum(c['total_size_mb'] for c in summary['columns'].values()):.0f} MB (extracted)
+- **Total extracted disk size:** approximately
+  {sum(c['total_size_mb'] for c in summary['columns'].values()):.0f} MB
 """
 
+    # Save the markdown file
     with open(output_path, "w") as f:
         f.write(md)
 

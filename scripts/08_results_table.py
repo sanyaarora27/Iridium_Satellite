@@ -4,7 +4,6 @@
 
 PURPOSE
 -------
-Produces the Step 9 results table in the exact column format requested:
 
     Model | Features used | Accuracy | Macro F1 | Notes
 
@@ -27,7 +26,7 @@ result as CSV and as a Markdown table ready to paste into the dissertation.
 
 USAGE
 -----
-    python scripts/07_results_table.py
+    python scripts/08_results_table.py
 
 Requires scripts 03 and 04 to have been run first.
 
