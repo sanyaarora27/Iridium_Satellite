@@ -52,6 +52,19 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
+try:
+    from scripts.evaluation_common import (
+        PASS_GAP_SECONDS,
+        assign_inferred_passes,
+        timestamp_global_to_seconds,
+    )
+except ModuleNotFoundError:
+    from evaluation_common import (
+        PASS_GAP_SECONDS,
+        assign_inferred_passes,
+        timestamp_global_to_seconds,
+    )
+
 # StratifiedGroupKFold is available in recent scikit-learn versions.
 # Fall back to GroupKFold if the installed version does not provide it.
 try:
@@ -77,10 +90,6 @@ for directory in (OUTPUT_TABLES, OUTPUT_FIGURES, OUTPUT_REPORTS):
 # ─── CONFIG ──────────────────────────────────────────────────────────────────
 RANDOM_STATE = 42
 N_SPLITS = 5
-
-# A new pass begins when the gap between consecutive messages from the same
-# satellite is greater than this threshold.
-PASS_GAP_SECONDS = 300.0
 
 LABEL_COLUMN = "satellite_id"
 INDEX_COLUMN = "global_index"
@@ -169,41 +178,12 @@ def load_segmented_column(prefix: str) -> np.ndarray:
     return np.concatenate(arrays)
 
 
-def convert_timestamp_to_seconds(timestamp: np.ndarray) -> tuple[np.ndarray, str]:
-    """
-    Convert timestamps to seconds using a conservative automatic unit check.
-
-    The absolute timestamp size is less useful than the positive differences
-    between consecutive values, so the median positive difference is inspected.
-    """
-    ts = np.asarray(timestamp, dtype=np.float64)
-
-    sorted_ts = np.sort(ts[np.isfinite(ts)])
-    positive_diffs = np.diff(sorted_ts)
-    positive_diffs = positive_diffs[positive_diffs > 0]
-
-    if len(positive_diffs) == 0:
-        return ts, "seconds (no unit conversion inferred)"
-
-    median_gap = float(np.median(positive_diffs))
-
-    # Typical recording gaps should be fractions of a second to several seconds.
-    if median_gap > 1e8:
-        return ts / 1e9, "nanoseconds converted to seconds"
-    if median_gap > 1e5:
-        return ts / 1e6, "microseconds converted to seconds"
-    if median_gap > 1e2:
-        return ts / 1e3, "milliseconds converted to seconds"
-
-    return ts, "seconds"
-
-
 def attach_timestamps(features: pd.DataFrame) -> pd.DataFrame:
     """
     Attach raw timestamps to features.csv by using global_index.
 
-    timestamp_global is preferred because it is continuous across data segments.
-    timestamp is used only as a fallback.
+    timestamp_global is required because it is continuous across data segments
+    and defines the canonical inferred-pass grouping.
     """
     if "timestamp_global" in features.columns:
         print("Using timestamp_global already present in features.csv")
@@ -214,20 +194,14 @@ def attach_timestamps(features: pd.DataFrame) -> pd.DataFrame:
             f"'{INDEX_COLUMN}' is required to align feature rows with raw timestamps."
         )
 
-    timestamp_prefix = None
-    if list(DATA_DIR.glob("timestamp_global_*.npy")):
-        timestamp_prefix = "timestamp_global"
-    elif list(DATA_DIR.glob("timestamp_*.npy")):
-        timestamp_prefix = "timestamp"
-
-    if timestamp_prefix is None:
+    if not list(DATA_DIR.glob("timestamp_global_*.npy")):
         raise FileNotFoundError(
-            "No timestamp_global_*.npy or timestamp_*.npy files were found. "
+            "No timestamp_global_*.npy files were found. "
             "Pass-aware grouping requires timestamp metadata."
         )
 
-    print(f"Loading raw '{timestamp_prefix}' metadata...")
-    all_timestamps = load_segmented_column(timestamp_prefix)
+    print("Loading raw 'timestamp_global' metadata...")
+    all_timestamps = load_segmented_column("timestamp_global")
 
     global_indices = features[INDEX_COLUMN].to_numpy(dtype=np.int64)
     if global_indices.min() < 0 or global_indices.max() >= len(all_timestamps):
@@ -255,23 +229,24 @@ def create_pass_ids(
     The returned pass_id is globally unique.
     """
     df = dataframe.copy()
-    timestamp_seconds, unit_note = convert_timestamp_to_seconds(
+    df["timestamp_seconds"] = timestamp_global_to_seconds(
         df["timestamp_global"].to_numpy()
     )
-    df["timestamp_seconds"] = timestamp_seconds
 
     df = df.sort_values(
         [LABEL_COLUMN, "timestamp_seconds", INDEX_COLUMN]
     ).reset_index(drop=True)
 
-    satellite_changed = df[LABEL_COLUMN].ne(df[LABEL_COLUMN].shift())
-    time_gap = df.groupby(LABEL_COLUMN)["timestamp_seconds"].diff()
-    large_gap = time_gap.gt(gap_seconds)
+    df["pass_id"] = assign_inferred_passes(
+        df,
+        satellite_column=LABEL_COLUMN,
+        timestamp_column="timestamp_global",
+        index_column=INDEX_COLUMN,
+        gap_seconds=gap_seconds,
+    )
 
-    df["pass_id"] = (satellite_changed | large_gap).cumsum().astype(np.int64)
-
-    print(f"Timestamp interpretation: {unit_note}")
-    print(f"Pass gap threshold: {gap_seconds:.1f} seconds")
+    print("Timestamp interpretation: timestamp_global nanoseconds converted to seconds")
+    print(f"Pass definition: per-satellite timestamp-gap inferred pass, gap > {gap_seconds:.1f} seconds")
     print(f"Derived passes: {df['pass_id'].nunique()}")
 
     return df
@@ -442,6 +417,7 @@ def write_report(
     n_messages: int,
     n_features: int,
     n_splits: int,
+    splitter_name: str,
     output_path: Path,
 ) -> None:
     """Write a concise dissertation-ready Markdown report."""
@@ -463,8 +439,11 @@ to one pass remain entirely within either the training fold or the test fold.
 - **Satellites:** {n_satellites}
 - **RF features:** {n_features}
 - **Inferred passes:** {n_passes}
-- **Pass definition:** a new pass begins after a time gap greater than {PASS_GAP_SECONDS:.0f} seconds
-- **Evaluation:** {n_splits}-fold grouped cross-validation
+- **Pass definition:** timestamp-gap inferred pass, grouped per satellite; a new inferred pass begins after a time gap greater than {PASS_GAP_SECONDS:.0f} seconds
+- **Timestamp source:** timestamp_global, converted from nanoseconds to seconds
+- **Grouping scope:** per satellite; global_index is the deterministic tie-breaker
+- **Evaluation:** {n_splits}-fold {splitter_name} grouped cross-validation
+- **Interpretation:** this is an operational grouping heuristic, not a physical or orbital pass proven from ephemeris data
 - **Leakage control:** no pass appears in both training and test data within a fold
 
 ## Results
@@ -651,6 +630,7 @@ def main() -> None:
         n_messages=len(df),
         n_features=len(feature_columns),
         n_splits=n_splits,
+        splitter_name=type(splitter).__name__,
         output_path=report_path,
     )
 

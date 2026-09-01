@@ -1,4 +1,4 @@
-diagram """
+"""
 06_diagnose_features.py
 =======================
 

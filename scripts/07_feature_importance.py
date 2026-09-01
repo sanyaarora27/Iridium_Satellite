@@ -4,8 +4,6 @@
 
 PURPOSE
 -------
-Step 10 of the 29 June task list (feature importance), plus the diagnostic
-analysis that explains WHY the baseline sits at chance level.
 
 Three analyses:
 
@@ -311,9 +309,10 @@ def plot_channel_dominance(dominance: pd.DataFrame,
     ax1.barh(d["feature"], d["r2_vs_level"], color=colours)
     ax1.axvline(0.5, color="black", ls="--", lw=1, alpha=0.6)
     ax1.set_xlabel(r"$R^2$ of feature explained by signal level")
-    ax1.set_title("Channel dominance per feature\n"
-                  "(red = majority of variance is signal strength)",
-                  fontweight="bold")
+    ax1.set_title(
+        "Feature dependence on receiver-reported signal level",
+        fontweight="bold"
+            )
     ax1.set_xlim(0, 1)
     ax1.grid(axis="x", alpha=0.3)
 
@@ -327,8 +326,10 @@ def plot_channel_dominance(dominance: pd.DataFrame,
                      xytext=(3, 3), textcoords="offset points")
     ax2.set_xlabel(r"$R^2$ explained by signal level")
     ax2.set_ylabel("Random Forest importance")
-    ax2.set_title("Is the model relying on channel-driven features?",
-                  fontweight="bold")
+    ax2.set_title(
+        "Feature importance versus received-level dependence",
+        fontweight="bold"
+    )
     ax2.grid(alpha=0.3)
 
     plt.tight_layout()

@@ -1,5 +1,0 @@
-scenario,global_index,true_sat,claimed_sat,rf_predicted_sat,rf_confidence,confidence_band,rf_match,hmac_pass,freshness_pass,decision,caught_by
-Spoofed identity,0,109,92,109,0.32,high,False,True,True,reject,RF mismatch
-Stolen / cloned key,0,109,92,109,0.32,high,False,True,True,reject,RF mismatch
-Replay,0,109,109,109,0.32,high,True,True,False,reject,freshness
-Low RF confidence,4,92,92,85,0.2433,low,False,True,True,flag,confidence gate

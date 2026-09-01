@@ -66,6 +66,18 @@ from sklearn.model_selection import (GroupKFold, StratifiedGroupKFold,
                                      StratifiedKFold, train_test_split)
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.impute import SimpleImputer
+
+try:
+    from scripts.evaluation_common import (
+        PASS_GAP_SECONDS,
+        assign_inferred_passes,
+    )
+except ModuleNotFoundError:
+    from evaluation_common import (
+        PASS_GAP_SECONDS,
+        assign_inferred_passes,
+    )
 
 
 # --- PATHS ----------------------------------------------------------------
@@ -85,13 +97,6 @@ N_SPLITS      = 5
 NON_FEATURE_COLUMNS = {"sample_id", "global_index", "index",
                        "Unnamed: 0", "satellite_id"}
 METADATA_COLUMNS = ["level", "noise", "ra_alt", "center_frequency"]
-
-# A satellite is visible from a fixed ground station for roughly 10 minutes,
-# and its orbital period is about 100 minutes. A gap of 20 minutes between
-# consecutive messages from the same satellite therefore reliably indicates
-# a new pass.
-PASS_GAP_SECONDS = 20 * 60
-
 
 # --- LOADING -------------------------------------------------------------
 def load_metadata_column(column: str) -> np.ndarray | None:
@@ -183,61 +188,22 @@ def assign_passes(df: pd.DataFrame) -> np.ndarray:
     """
     Label each message with a pass ID.
 
-    Messages are grouped by satellite and ordered in time; a new pass begins
-    whenever the gap to the previous message from that satellite exceeds
-    PASS_GAP_SECONDS. Pass IDs are unique across satellites.
-
-    If timestamps are unavailable, falls back to contiguous runs of
-    global_index, which approximates the same thing because the dataset is
-    stored in capture order.
+    This is the canonical timestamp-gap inferred-pass definition shared with
+    script 06. It is an operational grouping heuristic, not a physical or
+    orbital pass proven from ephemeris data.
     """
-    if "meta_timestamp_global" in df.columns:
-        raw = df["meta_timestamp_global"].to_numpy(dtype=float)
-
-        # Identify the timestamp unit by magnitude. A current Unix epoch
-        # value is ~1.7e9 in seconds, so each thousand-fold increase is one
-        # step finer. Comparing raw nanosecond gaps against a threshold
-        # expressed in seconds makes every gap look like a new pass, which
-        # silently reduces GroupKFold to an ordinary split.
-        median = float(np.nanmedian(np.abs(raw)))
-        if median > 1e17:
-            time_values, unit = raw / 1e9, "nanoseconds"
-        elif median > 1e14:
-            time_values, unit = raw / 1e6, "microseconds"
-        elif median > 1e11:
-            time_values, unit = raw / 1e3, "milliseconds"
-        else:
-            time_values, unit = raw, "seconds"
-        source = f"timestamp ({unit} -> seconds)"
-    else:
-        time_values = df["global_index"].to_numpy(dtype=float)
-        source = "global_index (timestamps unavailable)"
-
-    pass_ids = np.empty(len(df), dtype=int)
-    next_id = 0
-
-    for sat in df["satellite_id"].unique():
-        mask = (df["satellite_id"] == sat).to_numpy()
-        idx = np.where(mask)[0]
-        order = idx[np.argsort(time_values[idx])]
-
-        current = next_id
-        pass_ids[order[0]] = current
-        for a, b in zip(order[:-1], order[1:]):
-            gap = time_values[b] - time_values[a]
-            threshold = (PASS_GAP_SECONDS if source.startswith("timestamp")
-                         else 500)   # index units, not seconds
-            if gap > threshold:
-                current += 1
-            pass_ids[b] = current
-        next_id = current + 1
-
-    print(f"  pass source: {source}")
+    if "meta_timestamp_global" not in df.columns:
+        raise KeyError("Canonical inferred-pass grouping requires meta_timestamp_global")
+    pass_ids = assign_inferred_passes(
+        df,
+        satellite_column="satellite_id",
+        timestamp_column="meta_timestamp_global",
+        index_column="global_index",
+        gap_seconds=PASS_GAP_SECONDS,
+    )
+    print("  pass source: timestamp_global (nanoseconds -> seconds)")
+    print(f"  pass definition: per-satellite timestamp-gap inferred pass, gap > {PASS_GAP_SECONDS} seconds")
     counts = pd.Series(pass_ids).value_counts()
-    if counts.median() <= 1:
-        print("  WARNING: every message became its own pass. Grouping is "
-              "degenerate and GroupKFold will not differ from a random "
-              "split. Check the timestamp unit.")
     return pass_ids
 
 
@@ -264,9 +230,22 @@ def evaluate_cv(X: np.ndarray, y: np.ndarray,
         split_iter = splitter.split(X, y)
     else:
         n_groups = len(np.unique(groups))
-        k = min(n_splits_override or N_SPLITS, n_groups)
-        if k < 2:
-            return {"mean": np.nan, "std": np.nan, "folds": [], "n_groups": n_groups}
+        k = n_splits_override or N_SPLITS
+        if n_groups < k:
+            raise ValueError(
+                f"Cannot run {k}-fold grouped evaluation: only {n_groups} "
+                "inferred-pass groups are available."
+            )
+        group_counts = {
+            label: len(np.unique(groups[y == label])) for label in np.unique(y)
+        }
+        insufficient = {label: count for label, count in group_counts.items()
+                        if count < k}
+        if insufficient:
+            raise ValueError(
+                f"Cannot run {k}-fold grouped evaluation: each class needs "
+                f"at least {k} inferred passes, but counts are {insufficient}."
+            )
 
         # StratifiedGroupKFold, not plain GroupKFold.
         #
@@ -283,10 +262,21 @@ def evaluate_cv(X: np.ndarray, y: np.ndarray,
                                         random_state=RANDOM_SEED)
         split_iter = splitter.split(X, y, groups)
 
+    splits = list(split_iter)
+    if groups is not None:
+        all_classes = set(np.unique(y))
+        for fold_number, (tr, te) in enumerate(splits, start=1):
+            missing_train = all_classes - set(np.unique(y[tr]))
+            missing_test = all_classes - set(np.unique(y[te]))
+            if missing_train or missing_test:
+                raise ValueError(
+                    f"{k}-fold grouped split {fold_number} is not valid for "
+                    f"the five-class evaluation: missing train classes "
+                    f"{sorted(missing_train)}, test classes {sorted(missing_test)}."
+                )
+
     scores, chance = [], []
-    for tr, te in split_iter:
-        if len(np.unique(y[tr])) < 2:
-            continue
+    for tr, te in splits:
         m = model().fit(X[tr], y[tr])
         scores.append(accuracy_score(y[te], m.predict(X[te])))
         d = DummyClassifier(strategy="most_frequent").fit(X[tr], y[tr])
@@ -298,6 +288,9 @@ def evaluate_cv(X: np.ndarray, y: np.ndarray,
         "chance":     float(np.mean(chance)) if chance else np.nan,
         "folds":      scores,
         "n_groups":   int(len(np.unique(groups))) if groups is not None else None,
+        "n_splits":   len(splits),
+        "splitter":   ("StratifiedGroupKFold" if groups is not None
+                       else "StratifiedKFold"),
     }
 
 
@@ -495,33 +488,10 @@ def main() -> None:
 
     random_cv = evaluate_cv(X, y, groups=None)
 
-    # With few passes relative to classes, a grouped split can produce folds
-    # whose class balance differs sharply from the training folds. When that
-    # happens the majority-class baseline moves, and accuracies from the two
-    # schemes are no longer on the same scale. Try several fold counts and
-    # keep whichever produces a chance level closest to the random-split
-    # baseline; report if none of them are usable.
-    candidates = []
-    for k in (5, 4, 3, 2):
-        if k > len(np.unique(passes)):
-            continue
-        res = evaluate_cv(X, y, groups=passes, n_splits_override=k)
-        if not np.isfinite(res.get("mean", np.nan)):
-            continue
-        res["n_splits"] = k
-        res["chance_shift"] = abs(res["chance"] - random_cv["chance"])
-        candidates.append(res)
-        print(f"  {k}-fold grouped: acc={res['mean']:.4f}  "
-              f"chance={res['chance']:.4f}  "
-              f"chance shift={res['chance_shift']:+.4f}")
-
-    group_cv = (min(candidates, key=lambda r: r["chance_shift"])
-                if candidates else {"mean": np.nan, "std": np.nan,
-                                    "chance": np.nan, "n_splits": None,
-                                    "chance_shift": np.inf})
-    if candidates:
-        print(f"  using {group_cv['n_splits']}-fold "
-              f"(smallest chance shift)\n")
+    # The grouped protocol is fixed before model evaluation. Its fold count
+    # must never be selected from observed accuracy or baseline results.
+    group_cv = evaluate_cv(X, y, groups=passes, n_splits_override=N_SPLITS)
+    print(f"  using {group_cv['n_splits']}-fold {group_cv['splitter']}\n")
 
     print(f"\n  Random  {N_SPLITS}-fold CV: {random_cv['mean']:.4f} "
           f"(+/- {random_cv['std']:.4f})   chance {random_cv['chance']:.4f}")
@@ -530,23 +500,10 @@ def main() -> None:
     gap = random_cv["mean"] - group_cv["mean"]
     print(f"  Optimism from pass leakage: {gap:+.4f}")
 
-    # Guard: if the two chance levels differ materially, the folds are not
-    # comparable and the difference above cannot be read as leakage.
-    chance_shift = group_cv.get("chance_shift", np.inf)
-    comparable = chance_shift <= 0.05
-    if not comparable:
-        print(f"\n  NOT INTERPRETABLE: the grouped chance level differs from "
-              f"the random one by {chance_shift:.4f}.")
-        print(f"  With only {n_passes} passes across "
-              f"{len(np.unique(y))} satellites, no fold count produces "
-              f"balanced groups.")
-        print("  Pass-aware evaluation is underpowered on this subset and "
-              "should be")
-        print("  reported as a limitation rather than as a corrected result.")
-        print(f"  (For reference only, margins over their own baselines: "
-              f"random {random_cv['mean'] - random_cv['chance']:+.4f}, "
-              f"grouped {group_cv['mean'] - group_cv['chance']:+.4f}.)")
-    elif gap > 0.02:
+    print("  The random and grouped accuracies have different fold "
+          "compositions and should not be interpreted as a direct leakage "
+          "estimate without accounting for their baselines.")
+    if gap > 0.02:
         print("  => The random split was optimistic; some apparent skill was")
         print("     recognition of the pass rather than of the transmitter.")
     else:
@@ -563,10 +520,12 @@ def main() -> None:
         X, y, np.arange(len(y)), test_size=TEST_FRACTION,
         random_state=RANDOM_SEED, stratify=y)
 
-    def fit_predict(Xa, Xb):
-        m = Pipeline([("scale", StandardScaler()),
+    def fit_predict(Xa, Xb, impute=False):
+        steps = [("imputer", SimpleImputer(strategy="median"))] if impute else []
+        steps.extend([("scale", StandardScaler()),
                       ("clf", RandomForestClassifier(
                           n_estimators=100, random_state=RANDOM_SEED, n_jobs=-1))])
+        m = Pipeline(steps)
         m.fit(Xa, ytr)
         return m.predict(Xb)
 
@@ -585,11 +544,7 @@ def main() -> None:
     correct_meta = None
     if meta_cols:
         Xm = df[meta_cols].to_numpy(dtype=float)
-        for j in range(Xm.shape[1]):
-            bad = ~np.isfinite(Xm[:, j])
-            if bad.any():
-                Xm[bad, j] = np.nanmedian(Xm[~bad, j]) if (~bad).any() else 0.0
-        pred_meta = fit_predict(Xm[itr], Xm[ite])
+        pred_meta = fit_predict(Xm[itr], Xm[ite], impute=True)
         correct_meta = (pred_meta == yte)
         lo, hi = bootstrap_ci(correct_meta)
         results.append((f"{len(meta_cols)} channel metadata",
@@ -673,9 +628,15 @@ def main() -> None:
     print("Writing outputs...")
     pd.DataFrame([
         {"split": "random (StratifiedKFold)", "accuracy": random_cv["mean"],
-         "std": random_cv["std"], "chance": random_cv["chance"]},
-        {"split": "pass-aware (GroupKFold)",  "accuracy": group_cv["mean"],
-         "std": group_cv["std"],  "chance": group_cv["chance"]},
+            "std": random_cv["std"], "chance": random_cv["chance"],
+            "pass_definition": "timestamp_gap", "pass_gap_seconds": PASS_GAP_SECONDS,
+            "timestamp_source": "timestamp_global", "grouping_scope": "per_satellite",
+            "random_seed": RANDOM_SEED, "splitter": random_cv["splitter"]},
+           {"split": "pass-aware (StratifiedGroupKFold)", "accuracy": group_cv["mean"],
+            "std": group_cv["std"], "chance": group_cv["chance"],
+            "pass_definition": "timestamp_gap", "pass_gap_seconds": PASS_GAP_SECONDS,
+            "timestamp_source": "timestamp_global", "grouping_scope": "per_satellite",
+            "random_seed": RANDOM_SEED, "splitter": group_cv["splitter"]},
     ]).to_csv(OUT_TABLES / "groupkfold_results.csv", index=False)
     maha.to_csv(OUT_TABLES / "mahalanobis_distances.csv", index=False)
     if len(decomp):
@@ -687,19 +648,29 @@ Five corrections to the earlier analysis.
 
 ## A. Pass-aware evaluation
 
-Messages captured during the same satellite pass share channel conditions.
-A random train/test split can place messages from one pass on both sides of
-the split, allowing a model to score above chance by recognising the pass
-rather than the transmitter. Passes were recovered from gaps in the capture
-timestamps ({n_passes:,} passes identified) and used as cross-validation
-groups so that no pass is ever split.
+Messages captured during the same timestamp-gap inferred pass share channel
+conditions. This is an operational grouping heuristic, not a physical or
+orbital pass proven from ephemeris data. A random train/test split can place
+messages from one inferred pass on both sides of the split, allowing a model
+to score above chance by recognising the pass rather than the transmitter.
+Passes were recovered from timestamp_global gaps ({n_passes:,} passes
+identified) using the canonical {PASS_GAP_SECONDS}-second threshold, converted
+from nanoseconds to seconds, grouped per satellite, and tie-broken by
+global_index.
 
 | Split | Accuracy | Chance |
 |-------|---------:|-------:|
 | Random (StratifiedKFold) | {random_cv['mean']:.4f} ± {random_cv['std']:.4f} | {random_cv['chance']:.4f} |
-| Pass-aware (GroupKFold) | {group_cv['mean']:.4f} ± {group_cv['std']:.4f} | {group_cv['chance']:.4f} |
+| Pass-aware ({group_cv['splitter']}) | {group_cv['mean']:.4f} ± {group_cv['std']:.4f} | {group_cv['chance']:.4f} |
 
 Difference: {gap:+.4f}.
+
+Bootstrap intervals in this report resample messages and describe
+message-level uncertainty; they must not be interpreted as independent
+inferred-pass uncertainty. McNemar results below are based on a message-level
+split and support message-level comparisons, not pass-level generalisation
+claims. The Mahalanobis analysis uses the full dataset and is descriptive,
+not held-out predictive validation.
 
 ## B. Paired classifier comparison
 

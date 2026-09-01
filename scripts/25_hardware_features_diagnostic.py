@@ -18,15 +18,16 @@ to distinguish "real signal" from "channel artefact".
 """
 
 import numpy as np
-from pathlib import Path
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedShuffleSplit, GroupKFold
 from sklearn.metrics import accuracy_score, f1_score
 import warnings
 warnings.filterwarnings("ignore")
+from pathlib import Path
 
-DATA_DIR = Path("data/raw")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DATA_DIR = PROJECT_ROOT / "data" / "raw"
 TARGET_SATS = [51, 85, 87, 92, 109]
 MAX_VALID_TS = 5e15
 SESSION_BOUNDARIES = [1940e12, 1995e12]

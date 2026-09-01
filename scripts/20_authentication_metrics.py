@@ -63,8 +63,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-
+from sklearn.impute import SimpleImputer
 
 # --- PATHS ----------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -79,7 +78,7 @@ for d in (OUT_TABLES, OUT_FIGURES, OUT_REPORTS):
 RANDOM_SEED   = 42
 TEST_FRACTION = 0.20
 NON_FEATURE_COLUMNS = {"sample_id", "global_index", "index",
-                       "Unnamed: 0", "satellite_id"}
+                    "Unnamed: 0", "satellite_id"}
 RX_METADATA = ["level", "noise", "center_frequency"]
 
 # Published figures for SatIQ (Smailes et al., 2025) on Iridium.
@@ -108,11 +107,9 @@ def load_all() -> tuple[pd.DataFrame, list[str], list[str]]:
 
 
 def clean(X: np.ndarray) -> np.ndarray:
+    """Convert non-finite values to NaN for train-fitted imputation."""
     X = X.astype(float).copy()
-    for j in range(X.shape[1]):
-        bad = ~np.isfinite(X[:, j])
-        if bad.any():
-            X[bad, j] = np.nanmedian(X[~bad, j]) if (~bad).any() else 0.0
+    X[~np.isfinite(X)] = np.nan
     return X
 
 
@@ -123,9 +120,9 @@ def argmax_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> pd.DataFrame:
 
     For satellite T:
         FRR(T) = fraction of genuine T messages NOT labelled T
-                 -> legitimate traffic that would be flagged as spoofed
+                -> legitimate traffic that would be flagged as spoofed
         FAR(T) = fraction of non-T messages labelled T
-                 -> impersonations of T that would be accepted
+-> impersonations of T that would be accepted
     """
     rows = []
     for sat in np.unique(y_true):
@@ -134,8 +131,8 @@ def argmax_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> pd.DataFrame:
         frr = float((y_pred[genuine] != sat).mean())
         far = float((y_pred[others] == sat).mean()) if others.any() else np.nan
         rows.append({"satellite": int(sat),
-                     "n_genuine": int(genuine.sum()),
-                     "FRR": frr, "FAR": far})
+                "n_genuine": int(genuine.sum()),
+                "FRR": frr, "FAR": far})
     return pd.DataFrame(rows)
 
 
@@ -158,7 +155,7 @@ def threshold_sweep(y_true: np.ndarray,
     for i, true_label in enumerate(y_true):
         for j, cls in enumerate(classes):
             (genuine_scores if cls == true_label else impostor_scores
-             ).append(proba[i, j])
+).append(proba[i, j])
 
     genuine  = np.array(genuine_scores)
     impostor = np.array(impostor_scores)
@@ -180,31 +177,43 @@ def threshold_sweep(y_true: np.ndarray,
 # --- EVALUATION ----------------------------------------------------------
 def evaluate_model(X: np.ndarray, y: np.ndarray, label: str) -> dict:
     X_tr, X_te, y_tr, y_te = train_test_split(
-        X, y, test_size=TEST_FRACTION,
-        random_state=RANDOM_SEED, stratify=y)
+        X,
+        y,
+        test_size=TEST_FRACTION,
+        random_state=RANDOM_SEED,
+        stratify=y
+    )
 
     model = Pipeline([
-        ("scale", StandardScaler()),
-        ("clf",   RandomForestClassifier(
+        ("imputer", SimpleImputer(strategy="median")),
+        ("clf", RandomForestClassifier(
             n_estimators=200,
             max_features=None if X.shape[1] <= 6 else "sqrt",
-            random_state=RANDOM_SEED, n_jobs=-1)),
-    ]).fit(X_tr, y_tr)
+            random_state=RANDOM_SEED,
+            n_jobs=-1
+        )),
+    ])
+
+    model.fit(X_tr, y_tr)
 
     y_pred = model.predict(X_te)
-    proba  = model.predict_proba(X_te)
+    proba = model.predict_proba(X_te)
     classes = model.named_steps["clf"].classes_
 
     per_sat = argmax_metrics(y_te, y_pred)
     curve, eer, tau = threshold_sweep(y_te, proba, classes)
 
-    return {"label": label, "accuracy": float((y_pred == y_te).mean()),
-            "per_satellite": per_sat, "curve": curve,
-            "eer": eer, "eer_threshold": tau,
-            "mean_FRR": float(per_sat["FRR"].mean()),
-            "mean_FAR": float(per_sat["FAR"].mean()),
-            "n_features": X.shape[1]}
-
+    return {
+        "label": label,
+        "accuracy": float((y_pred == y_te).mean()),
+        "per_satellite": per_sat,
+        "curve": curve,
+        "eer": eer,
+        "eer_threshold": tau,
+        "mean_FRR": float(per_sat["FRR"].mean()),
+        "mean_FAR": float(per_sat["FAR"].mean()),
+        "n_features": X.shape[1],
+    }
 
 # --- PLOT ----------------------------------------------------------------
 def plot_tradeoff(results: list[dict], path: Path) -> None:
@@ -213,22 +222,22 @@ def plot_tradeoff(results: list[dict], path: Path) -> None:
     for res in results:
         c = res["curve"]
         ax1.plot(c["threshold"], c["FRR"], lw=1.6,
-                 label=f"{res['label']} - FRR")
+            label=f"{res['label']} - FRR")
         ax1.plot(c["threshold"], c["FAR"], lw=1.6, ls="--",
-                 label=f"{res['label']} - FAR")
+                label=f"{res['label']} - FAR")
     ax1.set_xlabel(r"Acceptance threshold $\tau$")
     ax1.set_ylabel("Error rate")
     ax1.set_title("Verification error rates against threshold",
-                  fontweight="bold")
+            fontweight="bold")
     ax1.legend(fontsize=8)
     ax1.grid(alpha=0.3)
 
     for res in results:
         c = res["curve"]
         ax2.plot(c["FAR"], c["FRR"], lw=1.8,
-                 label=f"{res['label']}  (EER {res['eer']:.1%})")
+                label=f"{res['label']}  (EER {res['eer']:.1%})")
     ax2.plot([0, 1], [0, 1], color="grey", ls=":", lw=1,
-             label="EER line")
+            label="EER line")
     ax2.scatter([SATIQ_EER], [SATIQ_EER], s=90, color="crimson", zorder=5,
                 label=f"SatIQ deep model (EER {SATIQ_EER:.1%})")
     ax2.set_xlabel("False Accept Rate")
@@ -254,10 +263,10 @@ def main() -> None:
     y = df["satellite_id"].to_numpy()
 
     results = [evaluate_model(clean(df[features].to_numpy()), y,
-                              "28 waveform features")]
+                            "28 waveform features")]
     if rx:
         results.append(evaluate_model(clean(df[rx].to_numpy()), y,
-                                      "receiver-side metadata"))
+                                    "receiver-side metadata"))
 
     print("\n" + "-" * 72)
     print("A. ARGMAX DECISION RULE")
@@ -267,9 +276,9 @@ def main() -> None:
         print(f"    {'satellite':>10}{'genuine':>9}{'FRR':>9}{'FAR':>9}")
         for _, r in res["per_satellite"].iterrows():
             print(f"    {int(r['satellite']):>10}{int(r['n_genuine']):>9,}"
-                  f"{r['FRR']:>9.1%}{r['FAR']:>9.1%}")
+                f"{r['FRR']:>9.1%}{r['FAR']:>9.1%}")
         print(f"    {'mean':>10}{'':>9}{res['mean_FRR']:>9.1%}"
-              f"{res['mean_FAR']:>9.1%}")
+            f"{res['mean_FAR']:>9.1%}")
 
     print("\n" + "-" * 72)
     print("B. EQUAL ERROR RATE")
@@ -277,7 +286,7 @@ def main() -> None:
     print(f"\n  {'model':<26}{'EER':>9}{'at tau':>9}")
     for res in results:
         print(f"  {res['label']:<26}{res['eer']:>9.1%}"
-              f"{res['eer_threshold']:>9.2f}")
+            f"{res['eer_threshold']:>9.2f}")
     print(f"  {'SatIQ (published)':<26}{SATIQ_EER:>9.1%}{'-':>9}")
 
     best = min(results, key=lambda r: r["eer"])
@@ -300,7 +309,7 @@ def main() -> None:
                         "model_accuracy": res["accuracy"],
                         "model_EER": res["eer"]})
     pd.DataFrame(out).to_csv(OUT_TABLES / "authentication_metrics.csv",
-                             index=False)
+                            index=False)
     plot_tradeoff(results, OUT_FIGURES / "authentication_tradeoff.png")
 
     md = """# Authentication error rates
@@ -330,7 +339,7 @@ irrespective of its resistance to attack.
 """
     for res in results:
         md += (f"| {res['label']} | {res['accuracy']:.1%} "
-               f"| {res['mean_FRR']:.1%} | {res['mean_FAR']:.1%} |\n")
+            f"| {res['mean_FRR']:.1%} | {res['mean_FAR']:.1%} |\n")
 
     md += """
 Per-satellite detail:
@@ -341,8 +350,8 @@ Per-satellite detail:
     for res in results:
         for _, r in res["per_satellite"].iterrows():
             md += (f"| {res['label']} | {int(r['satellite'])} "
-                   f"| {int(r['n_genuine']):,} | {r['FRR']:.1%} "
-                   f"| {r['FAR']:.1%} |\n")
+                f"| {int(r['n_genuine']):,} | {r['FRR']:.1%} "
+                f"| {r['FAR']:.1%} |\n")
 
     md += f"""
 ## B. Equal Error Rate
@@ -358,7 +367,7 @@ biometric and RF-fingerprinting literature.
 """
     for res in results:
         md += (f"| {res['label']} | {res['eer']:.1%} "
-               f"| {res['eer_threshold']:.2f} |\n")
+            f"| {res['eer_threshold']:.2f} |\n")
     md += f"| SatIQ (Smailes et al., 2025) | {SATIQ_EER:.1%} | - |\n"
 
     md += f"""

@@ -21,8 +21,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-DATA_DIR = Path("data/raw")
-OUT_FIGS = Path("outputs/figures"); OUT_FIGS.mkdir(parents=True, exist_ok=True)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+DATA_DIR = PROJECT_ROOT / "data" / "raw"
+OUT_FIGS = PROJECT_ROOT / "outputs" / "figures"
+
+OUT_FIGS.mkdir(parents=True, exist_ok=True)
 
 TARGET_SATS = [51, 85, 87, 92, 109]
 SAT_COLORS = {51: "#e74c3c", 85: "#3498db", 87: "#2ecc71", 92: "#9b59b6", 109: "#f39c12"}

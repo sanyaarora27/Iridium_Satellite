@@ -37,10 +37,18 @@ from sklearn.preprocessing import label_binarize
 warnings.filterwarnings("ignore")
 
 # ── Config ────────────────────────────────────────────────────────────────
-DATA_DIR      = Path("data/raw")
-OUT_TABLES    = Path("outputs/tables");   OUT_TABLES.mkdir(parents=True, exist_ok=True)
-OUT_FIGS      = Path("outputs/figures");  OUT_FIGS.mkdir(parents=True, exist_ok=True)
-OUT_REPORTS   = Path("outputs/reports");  OUT_REPORTS.mkdir(parents=True, exist_ok=True)
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+DATA_DIR = PROJECT_ROOT / "data" / "raw"
+OUT_TABLES = PROJECT_ROOT / "outputs" / "tables"
+OUT_FIGS = PROJECT_ROOT / "outputs" / "figures"
+OUT_REPORTS = PROJECT_ROOT / "outputs" / "reports"
+
+OUT_TABLES.mkdir(parents=True, exist_ok=True)
+OUT_FIGS.mkdir(parents=True, exist_ok=True)
+OUT_REPORTS.mkdir(parents=True, exist_ok=True)
 
 TARGET_SATS   = [51, 85, 87, 92, 109]
 N_SEGMENTS    = 5

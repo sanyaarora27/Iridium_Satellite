@@ -67,8 +67,20 @@ from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, roc_auc_score
 from sklearn.model_selection import train_test_split
+from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+
+
+try:
+    from scripts.evaluation_common import (
+        PASS_GAP_SECONDS,
+        assign_inferred_passes,
+    )
+except ModuleNotFoundError:
+    from evaluation_common import (
+        PASS_GAP_SECONDS,
+        assign_inferred_passes,
+    )
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -83,7 +95,11 @@ RANDOM_SEED   = 42
 TEST_FRACTION = 0.20
 NON_FEATURE   = {"sample_id", "global_index", "index",
                  "Unnamed: 0", "satellite_id"}
-PASS_GAP_S    = 20 * 60
+FIXED_FEATURE_SET = "all combined"
+FEATURE_SELECTION_PROVENANCE = (
+    "pre-specified all combined representation; not selected from this test set"
+)
+THRESHOLD_PROVENANCE = "not applicable; AUROC is threshold-free"
 
 
 def load_col(name):
@@ -116,45 +132,74 @@ def load_all() -> tuple[pd.DataFrame, dict]:
 
     ts = load_col("timestamp_global")
     if ts is not None and rows.max() < len(ts):
-        t = ts[rows].astype(float)
+        raw_timestamp = ts[rows].astype(float)
+        df["timestamp_global"] = raw_timestamp
+        t = raw_timestamp
         if np.nanmedian(np.abs(t)) > 1e17:
             t = t / 1e9
         df["time_s"] = t
-        # Passes: contiguous runs per satellite separated by long gaps
-        pass_id = np.empty(len(df), dtype=int)
-        nxt = 0
-        sat = df["satellite_id"].to_numpy()
-        for s in np.unique(sat):
-            idx = np.where(sat == s)[0]
-            order = idx[np.argsort(t[idx])]
-            cur = nxt
-            pass_id[order[0]] = cur
-            for a, b in zip(order[:-1], order[1:]):
-                if t[b] - t[a] > PASS_GAP_S:
-                    cur += 1
-                pass_id[b] = cur
-            nxt = cur + 1
-        df["pass_id"] = pass_id
+        df["pass_id"] = assign_inferred_passes(
+            df,
+            satellite_column="satellite_id",
+            timestamp_column="timestamp_global",
+            index_column="global_index",
+            gap_seconds=PASS_GAP_SECONDS,
+        )
 
     return df, sets
 
 
-def clean(X):
+def prepare_features(X):
+    """Convert non-finite values to missing values for pipeline imputation."""
     X = X.astype(float).copy()
-    for j in range(X.shape[1]):
-        bad = ~np.isfinite(X[:, j])
-        if bad.any():
-            X[bad, j] = np.nanmedian(X[~bad, j]) if (~bad).any() else 0.0
+    X[~np.isfinite(X)] = np.nan
     return X
 
+def fixed_feature_columns(sets, all_features):
+    """Return the pre-specified feature representation for downstream tests."""
+    if FIXED_FEATURE_SET == "all combined":
+        return list(all_features)
+
+    if FIXED_FEATURE_SET not in sets:
+        raise ValueError(
+            f"Unknown FIXED_FEATURE_SET: {FIXED_FEATURE_SET}. "
+            f"Available sets: {list(sets.keys())}"
+        )
+
+    return list(sets[FIXED_FEATURE_SET])
+
+def assert_identity_separation(training_labels, unknown_satellites):
+    """Ensure held-out/open-set identities are absent from model training."""
+    training_ids = set(np.unique(training_labels).tolist())
+    unknown_ids = set(unknown_satellites)
+
+    overlap = training_ids.intersection(unknown_ids)
+
+    if overlap:
+        raise AssertionError(
+            "Open-set identity leakage detected. "
+            f"Satellite IDs present in both training and unknown sets: {sorted(overlap)}"
+        )
 
 def forest():
     return Pipeline([
-        ("scale", StandardScaler()),
-        ("clf",   RandomForestClassifier(n_estimators=300,
-                                         random_state=RANDOM_SEED, n_jobs=-1)),
+        ("imputer", SimpleImputer(strategy="median")),
+        ("clf", RandomForestClassifier(
+            n_estimators=200,
+            random_state=RANDOM_SEED,
+            n_jobs=-1
+        )),
     ])
-
+def provenance(evaluation_scope: str) -> dict:
+    """Record the configuration used for each reported experiment."""
+    return {
+        "evaluation_scope": evaluation_scope,
+        "model_name": "random_forest",
+        "rf_n_estimators": 200,
+        "rf_scaled": False,
+        "imputer": "median",
+        "random_seed": RANDOM_SEED,
+    }
 
 def mcnemar(a, b):
     n01 = int(np.sum(~a & b)); n10 = int(np.sum(a & ~b))
@@ -202,7 +247,7 @@ def main() -> None:
     correct_by_set = {}
     for label, cols in sets.items():
         all_features += cols
-        X = clean(df[cols].to_numpy())
+        X = prepare_features(df[cols].to_numpy())
         m = forest().fit(X[itr], ytr)
         correct = (m.predict(X[ite]) == yte)
         correct_by_set[label] = correct
@@ -210,11 +255,13 @@ def main() -> None:
         comparison.append({
             "feature_set": label, "n_features": len(cols),
             "accuracy": float(correct.mean()), "ci_low": lo, "ci_high": hi,
-            "p_vs_chance": mcnemar(chance_correct, correct)})
+            "p_vs_chance": mcnemar(chance_correct, correct),
+            **provenance("closed-set stratified 80/20 comparison"),
+        })
 
     # All sets combined
     if len(sets) > 1:
-        X = clean(df[all_features].to_numpy())
+        X = prepare_features(df[all_features].to_numpy())
         m = forest().fit(X[itr], ytr)
         correct = (m.predict(X[ite]) == yte)
         correct_by_set["all combined"] = correct
@@ -222,12 +269,15 @@ def main() -> None:
         comparison.append({
             "feature_set": "all combined", "n_features": len(all_features),
             "accuracy": float(correct.mean()), "ci_low": lo, "ci_high": hi,
-            "p_vs_chance": mcnemar(chance_correct, correct)})
+            "p_vs_chance": mcnemar(chance_correct, correct),
+            **provenance("closed-set stratified 80/20 comparison"),
+        })
 
     lo, hi = bootstrap_ci(chance_correct)
     comparison.insert(0, {"feature_set": "chance", "n_features": 0,
                           "accuracy": float(chance_correct.mean()),
-                          "ci_low": lo, "ci_high": hi, "p_vs_chance": 1.0})
+                          "ci_low": lo, "ci_high": hi, "p_vs_chance": 1.0,
+                          **provenance("closed-set stratified 80/20 comparison")})
 
     comp = pd.DataFrame(comparison)
     print(f"\n  {'feature set':<28}{'n':>5}{'acc':>9}{'95% CI':>20}{'p':>10}")
@@ -253,11 +303,11 @@ def main() -> None:
     print("  A large gap means the features describe conditions, not transmitters.\n")
 
     cross_rows = []
-    best_label = max((c for c in comparison if c["feature_set"] != "chance"),
-                     key=lambda c: c["accuracy"])["feature_set"]
-    best_cols = (all_features if best_label == "all combined"
-                 else sets[best_label])
-    X_best = clean(df[best_cols].to_numpy())
+    best_label = FIXED_FEATURE_SET
+    best_cols = fixed_feature_columns(sets, all_features)
+    X_best = prepare_features(df[best_cols].to_numpy())
+    print(f"  Fixed downstream feature set: {best_label} ({len(best_cols)} features)")
+    print(f"  Feature selection provenance: {FEATURE_SELECTION_PROVENANCE}")
 
     for domain in ("beam", "pass_id"):
         if domain not in df.columns:
@@ -274,12 +324,18 @@ def main() -> None:
         set_a, set_b = set(shuffled[:half]), set(shuffled[half:])
         in_a = np.array([g in set_a for g in groups])
 
-        # Both halves must contain every class for the comparison to mean
-        # anything.
-        if len(np.unique(y[in_a])) < len(np.unique(y)) or \
-           len(np.unique(y[~in_a])) < len(np.unique(y)):
-            print(f"  {domain}: split does not preserve all classes -- skipping")
-            continue
+        source_satellites = sorted(np.unique(y[in_a]).tolist())
+        target_satellites = sorted(np.unique(y[~in_a]).tolist())
+        if len(source_satellites) < 2:
+            raise ValueError(
+                f"{domain} source domain split has fewer than two satellite classes: "
+                f"{source_satellites}"
+            )
+        if domain == "pass_id":
+            train_pass_ids = set(groups[in_a])
+            test_pass_ids = set(groups[~in_a])
+            if train_pass_ids.intersection(test_pass_ids):
+                raise AssertionError(f"{domain} train/test inferred-pass groups overlap")
 
         m = forest().fit(X_best[in_a], y[in_a])
         cross_acc = accuracy_score(y[~in_a], m.predict(X_best[~in_a]))
@@ -297,10 +353,18 @@ def main() -> None:
 
         cross_rows.append({
             "domain": domain, "n_domains": int(len(uniq)),
+            "training_domains": sorted(set_a), "testing_domains": sorted(set_b),
+            "training_satellites": source_satellites,
+            "testing_satellites": target_satellites,
+            "training_messages": int(in_a.sum()),
+            "testing_messages": int((~in_a).sum()),
+            "feature_set": best_label,
             "within_accuracy": within_acc, "within_chance": within_chance,
             "cross_accuracy": cross_acc, "cross_chance": cross_chance,
             "within_margin": within_acc - within_chance,
-            "cross_margin": cross_acc - cross_chance})
+            "cross_margin": cross_acc - cross_chance,
+            **provenance(f"cross-domain {domain}: source-to-target"),
+        })
 
         print(f"  {domain} ({len(uniq)} domains)")
         print(f"    within-domain: {within_acc:.4f}  "
@@ -341,6 +405,11 @@ def main() -> None:
         itr2, ite2, ytr2, yte2 = train_test_split(
             np.arange(len(yk)), yk, test_size=TEST_FRACTION,
             random_state=RANDOM_SEED, stratify=yk)
+        train_satellites = np.unique(ytr2)
+        unknown_satellites = np.unique(y[~known])
+        assert_identity_separation(ytr2, unknown_satellites)
+        print(f"    known training satellites: {sorted(train_satellites.tolist())}")
+        print(f"    unknown test satellites: {sorted(unknown_satellites.tolist())}")
         m = forest().fit(Xk[itr2], ytr2)
 
         conf_known   = m.predict_proba(Xk[ite2]).max(axis=1)
@@ -353,9 +422,17 @@ def main() -> None:
 
         open_rows.append({
             "held_out": int(held), "n_unknown": int((~known).sum()),
+            "known_satellites": sorted(np.unique(yk).tolist()),
+            "training_satellites": sorted(train_satellites.tolist()),
+            "unknown_satellites": sorted(unknown_satellites.tolist()),
+            "known_test_messages": int(len(ite2)),
+            "unknown_test_messages": int((~known).sum()),
+            "feature_set": best_label,
             "auroc": auroc,
             "mean_conf_known": float(conf_known.mean()),
-            "mean_conf_unknown": float(conf_unknown.mean())})
+            "mean_conf_unknown": float(conf_unknown.mean()),
+            **provenance("open-set held-out satellite AUROC"),
+        })
         print(f"    hold out Sat {int(held):>3d}: AUROC = {auroc:.4f}   "
               f"conf known {conf_known.mean():.3f} vs "
               f"unknown {conf_unknown.mean():.3f}")
@@ -427,9 +504,21 @@ def main() -> None:
                 bbox_inches="tight")
     plt.close(fig)
 
-    md = """# Feature sets, cross-domain generalisation, and open-set rejection
+    md = f"""# Feature sets, cross-domain generalisation, and open-set rejection
 
 Three evaluations drawn from the 2026 satellite-security literature.
+
+## Evaluation provenance
+
+- Pass definition: timestamp-gap inferred pass, with a {PASS_GAP_SECONDS}-second
+  gap threshold, grouped per satellite from timestamp_global.
+- Feature set used for cross-domain and open-set evaluation: {best_label};
+  {FEATURE_SELECTION_PROVENANCE}.
+- Preprocessing: median imputation and StandardScaler are fitted inside each
+  training pipeline and applied unchanged to evaluation data.
+- Open-set threshold: none is fitted; AUROC is threshold-free and uses maximum
+  class probability only as a ranking score ({THRESHOLD_PROVENANCE}).
+- Random seed: {RANDOM_SEED}.
 
 ## A. Feature set comparison
 
@@ -458,11 +547,14 @@ evaluations in this project were within-domain: a random split places every
 beam and every pass on both sides. Beam fixes the transmit antenna pattern;
 pass fixes geometry and time.
 
-| Domain | Domains | Within margin | Cross margin | Loss |
-|--------|--------:|--------------:|-------------:|-----:|
+| Domain | Source domains | Target domains | Train satellites | Test satellites | Train n | Test n | Within margin | Cross margin | Loss |
+|--------|---------------:|---------------:|------------------|-----------------|---------:|--------:|--------------:|-------------:|-----:|
 """
     for _, r in cross.iterrows():
-        md += (f"| {r['domain']} | {int(r['n_domains'])} "
+        md += (f"| {r['domain']} | {len(r['training_domains'])} | "
+               f"{len(r['testing_domains'])} | {r['training_satellites']} | "
+               f"{r['testing_satellites']} | {int(r['training_messages'])} | "
+               f"{int(r['testing_messages'])} "
                f"| {r['within_margin']:+.4f} | {r['cross_margin']:+.4f} "
                f"| {r['within_margin'] - r['cross_margin']:+.4f} |\n")
 
@@ -477,11 +569,13 @@ authentication. Every model built in this project is closed-set.
 Each satellite is held out in turn, a model trained on the remaining four,
 and maximum class probability used as a confidence score.
 
-| Held out | Unknown messages | AUROC | Mean confidence (known) | Mean confidence (unknown) |
-|---------:|-----------------:|------:|------------------------:|--------------------------:|
+| Held out | Known train satellites | Unknown test satellites | Known test n | Unknown test n | AUROC | Mean confidence (known) | Mean confidence (unknown) |
+|---------:|------------------------|--------------------------|--------------:|----------------:|------:|------------------------:|--------------------------:|
 """
     for _, r in openset.iterrows():
-        md += (f"| {int(r['held_out'])} | {int(r['n_unknown']):,} "
+        md += (f"| {int(r['held_out'])} | {r['training_satellites']} "
+               f"| {r['unknown_satellites']} | {int(r['known_test_messages']):,} "
+               f"| {int(r['unknown_test_messages']):,} "
                f"| {r['auroc']:.4f} | {r['mean_conf_known']:.3f} "
                f"| {r['mean_conf_unknown']:.3f} |\n")
 

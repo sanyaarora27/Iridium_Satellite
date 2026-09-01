@@ -1,28 +1,42 @@
 """
 fusion/_shared.py
 
-Small shared helpers for the higher-layer simulation (Option B: HMAC,
-Option C: TOTP freshness). Kept in one place so 02_higher_layer_sim.py and
-03_fusion_eval.py use *identical* key derivation and validation logic --
-important because 03 needs to construct attack variants (a "stolen key" that
-legitimately validates, a replayed nonce) using the same primitives that 02
-uses to build the genuine baseline.
+Shared helpers for the simulated higher layer used by the satellite
+authentication prototype.
 
-Nothing here touches real RF data. Every value in this module is part of
-the SIMULATED higher layer -- Iridium has no message authentication, so
-none of this exists in the real signal. That boundary should be stated
-plainly in the write-up.
+Implemented proof-of-concept mechanisms:
+    Option B: HMAC-SHA256 message authentication
+    Option C: TOTP-based freshness + explicit replay-state tracking
+
+IMPORTANT
+---------
+This module does NOT implement the real Iridium authentication protocol.
+All keys, payloads, nonces and higher-layer verdicts are simulated so that
+real RF-fingerprinting evidence can be evaluated inside a layered security
+prototype.
 """
 from __future__ import annotations
 
+import base64
 import hashlib
 import hmac
-import base64
+from pathlib import Path
+from typing import MutableSet
+
 import pyotp
 
-# --------------------------------------------------------------------------
-# Config -- adjust to match your real fusion/evidence.csv column names.
-# --------------------------------------------------------------------------
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+FUSION_DIR = PROJECT_ROOT / "fusion"
+
+FUSION_OUTPUT_DIR = FUSION_DIR / "outputs"
+FUSION_TABLES_DIR = FUSION_OUTPUT_DIR / "tables"
+FUSION_REPORTS_DIR = FUSION_OUTPUT_DIR / "reports"
+FUSION_FIGURES_DIR = FUSION_OUTPUT_DIR / "figures"
+
+FUSION_TABLES_DIR.mkdir(parents=True, exist_ok=True)
+FUSION_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+FUSION_FIGURES_DIR.mkdir(parents=True, exist_ok=True)
+
 COLUMN_MAP = {
     "id": "message_id",
     "true_sat": "true_satellite",
@@ -31,103 +45,146 @@ COLUMN_MAP = {
     "confidence": "rf_confidence",
 }
 
-MASTER_SEED = "iridium-fusion-demo-v1"   # fixed -> reproducible across runs
-SATELLITES = [92, 85, 87, 51, 109]       # the five-satellite subset
-BASE_TIME = 1_700_000_000                # arbitrary but realistic unix time;
-                                          # keeps TOTP timecodes well away from
-                                          # zero (pyotp needs counter > 0)
+# SIMULATION ONLY.
+# Deterministic derivation is used solely to make dissertation experiments
+# reproducible. It is not a production key-management design.
+SIM_MASTER_SEED = "iridium-fusion-demo-v2"
 
-# --------------------------------------------------------------------------
-# Per-satellite key material (deterministic, so re-running reproduces
-# identical results -- important for a dissertation artefact).
-# --------------------------------------------------------------------------
+SATELLITES = [92, 85, 87, 51, 109]
 
-def derive_hmac_key(sat_id) -> bytes:
-    """Deterministic 32-byte HMAC key for a given satellite's ground identity."""
-    return hashlib.sha256(f"{MASTER_SEED}:hmac:{sat_id}".encode()).digest()
+# Deterministic simulated clock. A real deployment would use an authenticated
+# protocol/capture time source.
+SIM_BASE_TIME = 1_700_000_000
+TOTP_INTERVAL_SECONDS = 30
+TOTP_VALID_WINDOW = 1
 
 
-def derive_totp_secret(sat_id) -> str:
-    """Deterministic base32 TOTP secret for a given satellite's ground identity."""
-    raw = hashlib.sha256(f"{MASTER_SEED}:totp:{sat_id}".encode()).digest()[:10]
-    return base64.b32encode(raw).decode()
+def derive_hmac_key(sat_id: int) -> bytes:
+    material = f"{SIM_MASTER_SEED}:hmac:{int(sat_id)}".encode("utf-8")
+    return hashlib.sha256(material).digest()
 
 
-def get_totp(sat_id) -> pyotp.TOTP:
-    return pyotp.TOTP(derive_totp_secret(sat_id), interval=30)
+def derive_totp_secret(sat_id: int) -> str:
+    material = f"{SIM_MASTER_SEED}:totp:{int(sat_id)}".encode("utf-8")
+    raw = hashlib.sha256(material).digest()[:20]
+    return base64.b32encode(raw).decode("ascii")
 
 
-# --------------------------------------------------------------------------
-# HMAC (Option B) -- RFC 2104 / FIPS 198-1, via stdlib hmac. Not hand-rolled.
-# --------------------------------------------------------------------------
+def get_totp(sat_id: int) -> pyotp.TOTP:
+    return pyotp.TOTP(
+        derive_totp_secret(sat_id),
+        interval=TOTP_INTERVAL_SECONDS,
+    )
 
-def canonical_message(global_index, claimed_sat, nonce) -> bytes:
-    return f"{global_index}|{claimed_sat}|{nonce}".encode()
+
+def build_simulated_payload(message_id: int, true_satellite: int) -> str:
+    """
+    Deterministic synthetic payload for integrity testing.
+
+    This is not an Iridium protocol payload.
+    """
+    return f"telemetry:{int(message_id)}:source:{int(true_satellite)}"
 
 
-def compute_mac(key: bytes, global_index, claimed_sat, nonce) -> str:
-    msg = canonical_message(global_index, claimed_sat, nonce)
+def canonical_message(
+    message_id: int,
+    claimed_satellite: int,
+    nonce: str,
+    payload: str,
+) -> bytes:
+    return (
+        f"{int(message_id)}|{int(claimed_satellite)}|{nonce}|{payload}"
+    ).encode("utf-8")
+
+
+def compute_mac(
+    key: bytes,
+    message_id: int,
+    claimed_satellite: int,
+    nonce: str,
+    payload: str,
+) -> str:
+    msg = canonical_message(
+        message_id=message_id,
+        claimed_satellite=claimed_satellite,
+        nonce=nonce,
+        payload=payload,
+    )
     return hmac.new(key, msg, hashlib.sha256).hexdigest()
 
 
-def verify_mac(key: bytes, global_index, claimed_sat, nonce, mac: str) -> bool:
-    expected = compute_mac(key, global_index, claimed_sat, nonce)
-    return hmac.compare_digest(expected, mac)
+def verify_mac(
+    key: bytes,
+    message_id: int,
+    claimed_satellite: int,
+    nonce: str,
+    payload: str,
+    mac: str,
+) -> bool:
+    expected = compute_mac(
+        key=key,
+        message_id=message_id,
+        claimed_satellite=claimed_satellite,
+        nonce=nonce,
+        payload=payload,
+    )
+    return hmac.compare_digest(expected, str(mac))
 
 
-# --------------------------------------------------------------------------
-# Freshness (Option C) -- RFC 6238 TOTP, via pyotp. A code is only fresh if
-# it (a) validates for the claimed satellite's TOTP secret at the given time
-# AND (b) has not been consumed before -- this second check is what catches
-# replay; TOTP validity alone does not, since a captured code is still
-# time-valid within its window.
-# --------------------------------------------------------------------------
-
-def generate_nonce(sat_id, at_time: int) -> str:
-    return get_totp(sat_id).at(at_time)
+def corrupt_mac(mac: str) -> str:
+    mac = str(mac)
+    if not mac:
+        return "0"
+    replacement = "0" if mac[-1].lower() != "0" else "1"
+    return mac[:-1] + replacement
 
 
-def verify_freshness(sat_id, nonce: str, at_time: int, seen_nonces: set) -> bool:
-    totp_valid = get_totp(sat_id).verify(nonce, for_time=at_time, valid_window=1)
-    key = (sat_id, nonce)
-    replayed = key in seen_nonces
-    if totp_valid and not replayed:
-        seen_nonces.add(key)
+def generate_nonce(sat_id: int, at_time: int) -> str:
+    return get_totp(sat_id).at(int(at_time))
+
+
+def verify_freshness(
+    sat_id: int,
+    nonce: str,
+    at_time: int,
+    seen_nonces: MutableSet[tuple[int, str]],
+) -> bool:
+    """
+    Freshness passes only if the TOTP is valid and the same
+    (satellite, nonce) pair has not already been consumed.
+    """
+    sat_id = int(sat_id)
+    nonce = str(nonce)
+
+    valid = get_totp(sat_id).verify(
+        nonce,
+        for_time=int(at_time),
+        valid_window=TOTP_VALID_WINDOW,
+    )
+
+    replay_key = (sat_id, nonce)
+    replayed = replay_key in seen_nonces
+
+    if valid and not replayed:
+        seen_nonces.add(replay_key)
         return True
+
     return False
 
 
-# --------------------------------------------------------------------------
-# Confidence bands -- FINALISED.
-#
-# The obvious approach (derive edges from the authentication-metrics script's
-# FRR/FAR crossover) turned out not to apply: that curve thresholds
-# P(claimed satellite), a materially different quantity from rf_confidence
-# (P(top predicted class)). For the ~75% of messages the classifier gets
-# wrong, P(claimed) sits well below rf_confidence, dragging that curve's
-# crossover down to tau=0.19 -- below evidence.csv's entire observed
-# confidence range (min 0.21). Reusing it directly would compare two
-# different scores.
-#
-# Built the matched version instead, directly from evidence.csv: does
-# rf_confidence actually distinguish correct RF predictions from incorrect
-# ones? AUC = 0.506 (p = 0.77, Mann-Whitney) -- statistically indistinguishable
-# from chance. The classifier's self-reported confidence carries no real
-# information about whether it's right. There is no data-derived threshold
-# to find here; that null result is itself worth reporting in the write-up.
-#
-# Given that, these edges are an explicit DESIGN CHOICE, not an optimised
-# threshold: tertiles of the observed confidence distribution, chosen for a
-# roughly even split (455 / 360 / 418 messages) rather than for any
-# discriminative power the data doesn't have.
-# --------------------------------------------------------------------------
-CONF_BAND_LOW_MAX = 0.2667
-CONF_BAND_HIGH_MIN = 0.3067
+def higher_layer_decision(hmac_pass: bool, freshness_pass: bool) -> str:
+    return "pass" if bool(hmac_pass) and bool(freshness_pass) else "reject"
 
 
-def confidence_band(confidence: float, low_max: float, high_min: float) -> str:
-    if confidence >= high_min:
-        return "high"
-    if confidence <= low_max:
-        return "low"
-    return "middle"
+def alternate_satellites(true_satellite: int) -> list[int]:
+    """Return every allowed false claimed identity for a true satellite."""
+    true_satellite = int(true_satellite)
+    alternatives = [sat for sat in SATELLITES if sat != true_satellite]
+    if not alternatives:
+        raise ValueError(f"No alternate satellite available for {true_satellite}")
+    return alternatives
+
+
+def choose_alternate_satellite(true_satellite: int) -> int:
+    """Return one deterministic alternate identity for single-case controls."""
+    return alternate_satellites(true_satellite)[0]

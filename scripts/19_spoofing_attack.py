@@ -75,8 +75,8 @@ import pandas as pd
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
+from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
 
 
 # --- PATHS ----------------------------------------------------------------
@@ -133,11 +133,9 @@ def load_all() -> tuple[pd.DataFrame, list[str], list[str]]:
 
 
 def clean(X: np.ndarray) -> np.ndarray:
+    """Convert non-finite values to NaN for train-fitted imputation."""
     X = X.astype(float).copy()
-    for j in range(X.shape[1]):
-        bad = ~np.isfinite(X[:, j])
-        if bad.any():
-            X[bad, j] = np.nanmedian(X[~bad, j]) if (~bad).any() else 0.0
+    X[~np.isfinite(X)] = np.nan
     return X
 
 
@@ -149,16 +147,121 @@ def run_attack(X: np.ndarray, y: np.ndarray,
     required for impersonation.
     """
     X_tr, X_te, y_tr, y_te = train_test_split(
-        X, y, test_size=TEST_FRACTION,
-        random_state=RANDOM_SEED, stratify=y)
+        X,
+        y,
+        test_size=TEST_FRACTION,
+        random_state=RANDOM_SEED,
+        stratify=y
+    )
 
     model = Pipeline([
-        ("scale", StandardScaler()),
-        ("clf",   RandomForestClassifier(n_estimators=200,
-                                         max_features=None if X.shape[1] <= 6
-                                                      else "sqrt",
-                                         random_state=RANDOM_SEED, n_jobs=-1)),
-    ]).fit(X_tr, y_tr)
+        ("imputer", SimpleImputer(strategy="median")),
+        ("clf", RandomForestClassifier(
+            n_estimators=200,
+            max_features=None if X.shape[1] <= 6 else "sqrt",
+            random_state=RANDOM_SEED,
+            n_jobs=-1
+        )),
+    ])
+
+    model.fit(X_tr, y_tr)
+
+    # Use the imputer fitted ONLY on the training data.
+    imputer = model.named_steps["imputer"]
+    X_tr_imp = imputer.transform(X_tr)
+    X_te_imp = imputer.transform(X_te)
+
+    baseline = float((model.predict(X_te) == y_te).mean())
+    sats = np.unique(y)
+
+    # Class statistics are calculated only from the imputed training set.
+    means = {
+        s: X_tr_imp[y_tr == s].mean(axis=0)
+        for s in sats
+    }
+
+    spread = {
+        s: X_tr_imp[y_tr == s].std(axis=0)
+        for s in sats
+    }
+
+    rows = []
+    curves = {}
+
+    for src in sats:
+        mask = (y_te == src)
+
+        if mask.sum() < 10:
+            continue
+
+        X_src = X_te_imp[mask]
+
+        for tgt in sats:
+            if tgt == src:
+                continue
+
+            direction = means[tgt] - means[src]
+
+            rates = []
+
+            for a in ALPHA_GRID:
+                X_attack = X_src + a * direction
+                pred = model.predict(X_attack)
+                rates.append(float((pred == tgt).mean()))
+
+            rates = np.array(rates)
+            curves[(int(src), int(tgt))] = rates
+
+            hit = np.where(rates >= SUCCESS_LEVEL)[0]
+
+            alpha_req = (
+                float(ALPHA_GRID[hit[0]])
+                if len(hit)
+                else np.nan
+            )
+
+            if np.isfinite(alpha_req):
+                pooled = np.sqrt(
+                    (spread[src] ** 2 + spread[tgt] ** 2) / 2
+                )
+
+                shift_sigma = (
+                    np.abs(alpha_req * direction) /
+                    (pooled + 1e-12)
+                )
+
+                max_sigma = float(np.max(shift_sigma))
+                mean_sigma = float(np.mean(shift_sigma))
+                worst = names[int(np.argmax(shift_sigma))]
+
+            else:
+                max_sigma = np.nan
+                mean_sigma = np.nan
+                worst = "-"
+
+            rows.append({
+                "model": label,
+                "source": int(src),
+                "target": int(tgt),
+                "alpha_required": alpha_req,
+                "success_at_alpha0": rates[0],
+                "success_at_alpha1": float(
+                    rates[np.argmin(np.abs(ALPHA_GRID - 1.0))]
+                ),
+                "max_shift_sigma": max_sigma,
+                "mean_shift_sigma": mean_sigma,
+                "largest_shift_feature": worst,
+            })
+
+    return pd.DataFrame(rows), {
+        "baseline": baseline,
+        "curves": curves,
+        "model": model,
+        "X_te": X_te_imp,
+        "y_te": y_te,
+        "means": means,
+        "spread": spread,
+    }
 
     baseline = float((model.predict(X_te) == y_te).mean())
     sats = np.unique(y)
