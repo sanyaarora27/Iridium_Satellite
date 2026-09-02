@@ -1,0 +1,102 @@
+MULTI-LAYER AUTHENTICATION FUSION SUMMARY
+============================================================
+
+Fusion policy:
+- HMAC failure -> REJECT
+- Freshness failure -> REJECT
+- Higher layer passes + RF match -> ACCEPT
+- Higher layer passes + RF mismatch -> FLAG
+
+RF mismatch is intentionally treated as an escalation signal rather than an autonomous rejection criterion.
+
+RF evidence-set accuracy: 24.49%
+
+Scenario: genuine
+  cases: 1,233
+  unique RF observations: 1,233
+  higher-layer pass: 100.0%
+  RF match: 24.5%
+  ACCEPT: 302/1,233 (24.5%)
+  FLAG: 931/1,233 (75.5%)
+  REJECT: 0/1,233 (0.0%)
+
+Scenario: wrong_key
+  cases: 1,233
+  unique RF observations: 1,233
+  higher-layer pass: 0.0%
+  RF match: 24.5%
+  ACCEPT: 0/1,233 (0.0%)
+  FLAG: 0/1,233 (0.0%)
+  REJECT: 1,233/1,233 (100.0%)
+
+Scenario: tampered_claim
+  cases: 1,233
+  unique RF observations: 1,233
+  higher-layer pass: 0.0%
+  RF match: 21.7%
+  ACCEPT: 0/1,233 (0.0%)
+  FLAG: 0/1,233 (0.0%)
+  REJECT: 1,233/1,233 (100.0%)
+
+Scenario: tampered_payload
+  cases: 1,233
+  unique RF observations: 1,233
+  higher-layer pass: 0.0%
+  RF match: 24.5%
+  ACCEPT: 0/1,233 (0.0%)
+  FLAG: 0/1,233 (0.0%)
+  REJECT: 1,233/1,233 (100.0%)
+
+Scenario: invalid_mac
+  cases: 1,233
+  unique RF observations: 1,233
+  higher-layer pass: 0.0%
+  RF match: 24.5%
+  ACCEPT: 0/1,233 (0.0%)
+  FLAG: 0/1,233 (0.0%)
+  REJECT: 1,233/1,233 (100.0%)
+
+Scenario: replay
+  cases: 1,233
+  unique RF observations: 1,233
+  higher-layer pass: 0.0%
+  RF match: 24.5%
+  ACCEPT: 0/1,233 (0.0%)
+  FLAG: 0/1,233 (0.0%)
+  REJECT: 1,233/1,233 (100.0%)
+
+Scenario: expired_freshness
+  cases: 1,233
+  unique RF observations: 1,233
+  higher-layer pass: 0.0%
+  RF match: 24.5%
+  ACCEPT: 0/1,233 (0.0%)
+  FLAG: 0/1,233 (0.0%)
+  REJECT: 1,233/1,233 (100.0%)
+
+Scenario: ordinary_identity_spoof
+  cases: 4,932
+  unique RF observations: 1,233
+  higher-layer pass: 0.0%
+  RF match: 18.9%
+  ACCEPT: 0/4,932 (0.0%)
+  FLAG: 0/4,932 (0.0%)
+  REJECT: 4,932/4,932 (100.0%)
+
+Scenario: stolen_key
+  cases: 4,932
+  unique RF observations: 1,233
+  higher-layer pass: 100.0%
+  RF match: 18.9%
+  ACCEPT: 931/4,932 (18.9%)
+  FLAG: 4,001/4,932 (81.1%)
+  REJECT: 0/4,932 (0.0%)
+
+INTERPRETATION
+------------------------------------------------------------
+
+The stolen-key scenario intentionally passes the simulated higher layer because the attacker is modelled as possessing a valid target credential.
+
+RF therefore supplies an independent RF-derived physical-layer consistency signal in that scenario. This is not proof of a hardware-unique fingerprint because the measured RF features are affected by channel and received-signal conditions.
+
+A FLAG is an escalation signal, not a verified attack detection and not an autonomous rejection.

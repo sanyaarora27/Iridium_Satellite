@@ -65,7 +65,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 
-# --- PATHS ----------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_RAW     = PROJECT_ROOT / "data" / "raw"
 FEATURES_CSV = PROJECT_ROOT / "outputs" / "tables" / "features.csv"
@@ -85,12 +84,9 @@ RX_METADATA = ["level", "noise", "center_frequency"]
 SATIQ_EER = 0.072
 SATIQ_AUC = 0.96
 
-
-# --- LOADING -------------------------------------------------------------
 def load_metadata_column(column: str) -> np.ndarray | None:
     files = sorted(DATA_RAW.glob(f"{column}_*.npy"))
     return np.concatenate([np.load(f) for f in files]) if files else None
-
 
 def load_all() -> tuple[pd.DataFrame, list[str], list[str]]:
     df = pd.read_csv(FEATURES_CSV)
@@ -105,15 +101,12 @@ def load_all() -> tuple[pd.DataFrame, list[str], list[str]]:
             rx.append(f"meta_{col}")
     return df, features, rx
 
-
 def clean(X: np.ndarray) -> np.ndarray:
     """Convert non-finite values to NaN for train-fitted imputation."""
     X = X.astype(float).copy()
     X[~np.isfinite(X)] = np.nan
     return X
 
-
-# --- A. ARGMAX DECISION RULE ---------------------------------------------
 def argmax_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> pd.DataFrame:
     """
     Per-satellite FRR and FAR under the argmax rule.
@@ -135,8 +128,6 @@ def argmax_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> pd.DataFrame:
                 "FRR": frr, "FAR": far})
     return pd.DataFrame(rows)
 
-
-# --- B. THRESHOLD SWEEP AND EER ------------------------------------------
 def threshold_sweep(y_true: np.ndarray,
                     proba: np.ndarray,
                     classes: np.ndarray) -> tuple[pd.DataFrame, float, float]:
@@ -173,8 +164,6 @@ def threshold_sweep(y_true: np.ndarray,
     eer = float((curve.loc[idx, "FAR"] + curve.loc[idx, "FRR"]) / 2)
     return curve, eer, float(curve.loc[idx, "threshold"])
 
-
-# --- EVALUATION ----------------------------------------------------------
 def evaluate_model(X: np.ndarray, y: np.ndarray, label: str) -> dict:
     X_tr, X_te, y_tr, y_te = train_test_split(
         X,
@@ -215,7 +204,6 @@ def evaluate_model(X: np.ndarray, y: np.ndarray, label: str) -> dict:
         "n_features": X.shape[1],
     }
 
-# --- PLOT ----------------------------------------------------------------
 def plot_tradeoff(results: list[dict], path: Path) -> None:
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
 
@@ -252,8 +240,6 @@ def plot_tradeoff(results: list[dict], path: Path) -> None:
     plt.savefig(path, dpi=110, bbox_inches="tight")
     plt.close(fig)
 
-
-# --- MAIN ----------------------------------------------------------------
 def main() -> None:
     print("=" * 72)
     print("Authentication error rates")
@@ -396,7 +382,6 @@ recoverable by simple aggregate statistics over the waveform.
     print("  outputs/figures/authentication_tradeoff.png")
     print("  outputs/reports/authentication_metrics.md")
     print("=" * 72)
-
 
 if __name__ == "__main__":
     main()

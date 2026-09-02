@@ -1,0 +1,9 @@
+model,scaled,cv_accuracy_mean,cv_accuracy_std,test_accuracy,accuracy_ci_low,accuracy_ci_high,test_macro_f1,train_eval_seconds
+Random Forest,False,0.2398,0.0131,0.2449,0.2222,0.2693,0.2422,4.0
+Neural Net (MLP),True,0.2314,0.0081,0.2328,0.2092,0.2563,0.2308,7.1
+Logistic Regression,True,0.2357,0.0116,0.2311,0.2076,0.2539,0.2232,1.2
+SVM (RBF),True,0.2333,0.0062,0.2238,0.2028,0.2474,0.2179,4.0
+Decision Tree,False,0.2337,0.0074,0.2157,0.1938,0.2393,0.2156,0.7
+k-NN (k=5),True,0.1978,0.0111,0.2141,0.1914,0.2368,0.2121,1.0
+Baseline (most frequent),False,0.2079,0.0,0.2084,0.1873,0.232,0.069,1.3
+Gaussian Naive Bayes,False,0.2071,0.007,0.2076,0.1873,0.2303,0.0994,0.3

@@ -54,7 +54,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_RAW     = PROJECT_ROOT / "data" / "raw"
 OUT_FIGURES  = PROJECT_ROOT / "outputs" / "figures"
@@ -67,11 +66,9 @@ ORBITAL_SPEED_KMS = 7.5          # Iridium, low Earth orbit
 EARTH_RADIUS_KM   = 6371.0
 MAX_GAP_S         = 600          # messages further apart are different passes
 
-
 def load_col(name: str) -> np.ndarray | None:
     files = sorted(DATA_RAW.glob(f"{name}_*.npy"))
     return np.concatenate([np.load(f) for f in files]) if files else None
-
 
 def great_circle_km(lat1, lon1, lat2, lon2) -> np.ndarray:
     """Distance along the Earth's surface between two sub-points."""
@@ -80,7 +77,6 @@ def great_circle_km(lat1, lon1, lat2, lon2) -> np.ndarray:
     dl = np.radians(lon2 - lon1)
     a = np.sin(dp / 2) ** 2 + np.cos(p1) * np.cos(p2) * np.sin(dl / 2) ** 2
     return 2 * EARTH_RADIUS_KM * np.arcsin(np.sqrt(np.clip(a, 0, 1)))
-
 
 def main() -> None:
     print("=" * 72)
@@ -173,7 +169,6 @@ def main() -> None:
                    "meaning of both fields requires re-examination.")
         print("\n  => INCONSISTENT. Investigate before relying on ra_sat.")
 
-    # ---- Figure ---------------------------------------------------------
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
 
     ax1.hist(np.clip(speeds, 0, 30), bins=80, color="steelblue")
@@ -254,7 +249,6 @@ fall within 1.5 times orbital velocity.
     print("\n  outputs/figures/position_sanity.png")
     print("  outputs/reports/position_sanity.md")
     print("=" * 72)
-
 
 if __name__ == "__main__":
     main()

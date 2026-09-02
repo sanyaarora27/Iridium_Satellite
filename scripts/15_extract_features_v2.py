@@ -75,26 +75,19 @@ import numpy as np
 import pandas as pd
 from scipy import stats as scipy_stats
 
-
-# --- PATHS ----------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR     = PROJECT_ROOT / "data" / "raw"
 OUT_TABLES   = PROJECT_ROOT / "outputs" / "tables"
 OUT_TABLES.mkdir(parents=True, exist_ok=True)
 
-
-# --- CONFIG ---------------------------------------------------------------
 TARGET_SATELLITES = [92, 85, 87, 51, 109]
 SAMPLE_RATE_HZ    = 25_000_000
 N_SEGMENTS        = 4          # sub-windows for the power trajectory
-
 
 def messages_per_segment() -> int:
     first = sorted(DATA_DIR.glob("ra_sat_*.npy"))[0]
     return int(np.load(first, mmap_mode="r").shape[0])
 
-
-# --- FEATURE EXTRACTION ---------------------------------------------------
 def extract_v2(i_raw: np.ndarray, q_raw: np.ndarray) -> dict:
     """
     Compute 26 amplitude-invariant, temporally-aware features from one
@@ -102,7 +95,6 @@ def extract_v2(i_raw: np.ndarray, q_raw: np.ndarray) -> dict:
     """
     f: dict = {}
 
-    # ---- Normalise to unit average power --------------------------------
     # Every subsequent quantity is then unaffected by how strong the signal
     # arrived, which is what removes the amplitude dominance seen in v1.
     z_raw = i_raw.astype(np.float64) + 1j * q_raw.astype(np.float64)
@@ -115,10 +107,6 @@ def extract_v2(i_raw: np.ndarray, q_raw: np.ndarray) -> dict:
     amp = np.abs(z)
     n = len(z)
 
-    # =====================================================================
-    # A. CARRIER FREQUENCY OFFSET AND OSCILLATOR BEHAVIOUR  (6 features)
-    # =====================================================================
-    # Fourth-power removes QPSK data modulation (see module docstring).
     z4 = z ** 4
     # Guard against zeros, which would make the angle undefined
     z4 = np.where(np.abs(z4) > 1e-30, z4, 1e-30)
@@ -152,9 +140,7 @@ def extract_v2(i_raw: np.ndarray, q_raw: np.ndarray) -> dict:
     f["cfo_skew"] = float(scipy_stats.skew(inst_freq))
     f["cfo_kurt"] = float(scipy_stats.kurtosis(inst_freq))
 
-    # =====================================================================
     # B. I/Q IMBALANCE  (5 features)
-    # =====================================================================
     # An ideal quadrature modulator produces I and Q with equal gain and
     # exactly 90 degrees of separation. Real analogue hardware does not,
     # and the residual imbalance is transmitter-specific.
@@ -182,9 +168,6 @@ def extract_v2(i_raw: np.ndarray, q_raw: np.ndarray) -> dict:
     f["dc_offset_q"]   = float(np.mean(q))
     f["dc_offset_mag"] = float(np.hypot(np.mean(i), np.mean(q)))
 
-    # =====================================================================
-    # C. ENVELOPE BEHAVIOUR  (4 features)
-    # =====================================================================
     mean_amp = float(np.mean(amp)) + 1e-12
 
     # Coefficient of variation: envelope ripple relative to its own level,
@@ -207,10 +190,6 @@ def extract_v2(i_raw: np.ndarray, q_raw: np.ndarray) -> dict:
     # Tailedness of the envelope: sensitive to clipping and compression.
     f["envelope_kurt"] = float(scipy_stats.kurtosis(amp))
 
-    # =====================================================================
-    # D. CONSTELLATION QUALITY  (3 features)
-    # =====================================================================
-    # After the fourth power, all four QPSK points coincide, so the angular
     # spread that remains measures how tightly the transmitter holds its
     # constellation -- independent of any fixed rotation between receiver
     # and transmitter.
@@ -234,10 +213,6 @@ def extract_v2(i_raw: np.ndarray, q_raw: np.ndarray) -> dict:
     else:
         f["phase_jitter"] = 0.0
 
-    # =====================================================================
-    # E. POWER TRAJECTORY ACROSS SUB-WINDOWS  (4 features)
-    # =====================================================================
-    # Splitting the burst into consecutive segments retains coarse temporal
     # structure that any whole-message aggregate discards. Each segment's
     # power is expressed as a ratio to the message mean, so the trajectory
     # is amplitude-invariant while its shape is preserved.
@@ -248,10 +223,6 @@ def extract_v2(i_raw: np.ndarray, q_raw: np.ndarray) -> dict:
         hi = (s + 1) * seg_len if s < N_SEGMENTS - 1 else n
         f[f"seg{s+1}_power_ratio"] = float(np.mean(inst_power[lo:hi]) / total_power)
 
-    # =====================================================================
-    # F. NORMALISED DISTRIBUTION SHAPE  (4 features)
-    # =====================================================================
-    # The v1 skewness and kurtosis were already dimensionless, but they were
     # computed on unnormalised samples alongside 13 amplitude-scale features
     # that dominated the model. Recomputed here on the normalised signal so
     # that they sit in a feature set where nothing measures raw power.
@@ -262,8 +233,6 @@ def extract_v2(i_raw: np.ndarray, q_raw: np.ndarray) -> dict:
 
     return f
 
-
-# --- MESSAGE INDEX --------------------------------------------------------
 def build_index() -> dict:
     """Group target messages by segment file so each is loaded once."""
     sat_files = sorted(DATA_DIR.glob("ra_sat_*.npy"))
@@ -285,8 +254,6 @@ def build_index() -> dict:
         print(f"    segment {seg}: {len(by_segment[seg]):,} messages")
     return by_segment
 
-
-# --- MAIN ----------------------------------------------------------------
 def main() -> None:
     print("=" * 72)
     print("Feature extraction v2 - amplitude-invariant, temporally aware")
@@ -346,7 +313,6 @@ def main() -> None:
     print(f"Shape: {df.shape}")
     print("\nNext: python scripts/16_compare_v1_v2.py")
     print("=" * 72)
-
 
 if __name__ == "__main__":
     main()

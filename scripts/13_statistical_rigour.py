@@ -79,8 +79,6 @@ except ModuleNotFoundError:
         assign_inferred_passes,
     )
 
-
-# --- PATHS ----------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_RAW     = PROJECT_ROOT / "data" / "raw"
 FEATURES_CSV = PROJECT_ROOT / "outputs" / "tables" / "features.csv"
@@ -98,11 +96,9 @@ NON_FEATURE_COLUMNS = {"sample_id", "global_index", "index",
                        "Unnamed: 0", "satellite_id"}
 METADATA_COLUMNS = ["level", "noise", "ra_alt", "center_frequency"]
 
-# --- LOADING -------------------------------------------------------------
 def load_metadata_column(column: str) -> np.ndarray | None:
     files = sorted(DATA_RAW.glob(f"{column}_*.npy"))
     return np.concatenate([np.load(f) for f in files]) if files else None
-
 
 def load_all() -> tuple[pd.DataFrame, list[str]]:
     df = pd.read_csv(FEATURES_CSV)
@@ -121,12 +117,9 @@ def load_all() -> tuple[pd.DataFrame, list[str]]:
 
     return df, features
 
-
-# --- ELEVATION (same corrected method as script 06) ----------------------
 RECEIVER_LAT_DEG, RECEIVER_LON_DEG, RECEIVER_ALT_M = 51.7548, -1.2544, 60.0
 WGS84_A, WGS84_F = 6378137.0, 1.0 / 298.257223563
 WGS84_E2 = WGS84_F * (2.0 - WGS84_F)
-
 
 def add_elevation(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -182,8 +175,6 @@ def add_elevation(df: pd.DataFrame) -> pd.DataFrame:
           f"{np.isnan(elev).sum():,} below horizon (discarded)")
     return df
 
-
-# --- A. PASS DETECTION ---------------------------------------------------
 def assign_passes(df: pd.DataFrame) -> np.ndarray:
     """
     Label each message with a pass ID.
@@ -206,8 +197,6 @@ def assign_passes(df: pd.DataFrame) -> np.ndarray:
     counts = pd.Series(pass_ids).value_counts()
     return pass_ids
 
-
-# --- A. GROUP-AWARE CROSS-VALIDATION -------------------------------------
 def evaluate_cv(X: np.ndarray, y: np.ndarray,
                 groups: np.ndarray | None,
                 n_splits_override: int | None = None) -> dict:
@@ -293,8 +282,6 @@ def evaluate_cv(X: np.ndarray, y: np.ndarray,
                        else "StratifiedKFold"),
     }
 
-
-# --- B. McNEMAR'S TEST ---------------------------------------------------
 def mcnemar_test(correct_a: np.ndarray, correct_b: np.ndarray) -> dict:
     """
     Exact McNemar test for two classifiers on the same test set.
@@ -324,7 +311,6 @@ def mcnemar_test(correct_a: np.ndarray, correct_b: np.ndarray) -> dict:
             "significant": p < 0.05,
             "note": f"{n_disc} discordant predictions"}
 
-
 def bootstrap_ci(correct: np.ndarray, n: int = N_BOOTSTRAP) -> tuple[float, float]:
     """95% percentile bootstrap CI for accuracy."""
     rng = np.random.default_rng(RANDOM_SEED)
@@ -332,8 +318,6 @@ def bootstrap_ci(correct: np.ndarray, n: int = N_BOOTSTRAP) -> tuple[float, floa
     scores = [correct[rng.integers(0, m, m)].mean() for _ in range(n)]
     return float(np.percentile(scores, 2.5)), float(np.percentile(scores, 97.5))
 
-
-# --- C. MAHALANOBIS SEPARABILITY -----------------------------------------
 def mahalanobis_separability(df: pd.DataFrame,
                              features: list[str]) -> pd.DataFrame:
     """
@@ -388,8 +372,6 @@ def mahalanobis_separability(df: pd.DataFrame,
             .sort_values("mahalanobis_D", ascending=False)
             .reset_index(drop=True))
 
-
-# --- D. VARIANCE DECOMPOSITION OF `level` --------------------------------
 def decompose_level_variance(df: pd.DataFrame) -> pd.DataFrame:
     """
     Attribute variation in `level` to candidate physical causes.
@@ -462,8 +444,6 @@ def decompose_level_variance(df: pd.DataFrame) -> pd.DataFrame:
 
     return pd.DataFrame(rows).sort_values("r2", ascending=False).reset_index(drop=True)
 
-
-# --- MAIN ----------------------------------------------------------------
 def main() -> None:
     print("=" * 72)
     print("Statistical rigour checks")
@@ -476,7 +456,6 @@ def main() -> None:
     df = add_elevation(df)
     print(f"  {len(df):,} messages, {len(features)} features")
 
-    # ---- A. Pass-aware evaluation ---------------------------------------
     print("\n" + "-" * 72)
     print("A. PASS-AWARE EVALUATION (GroupKFold)")
     print("-" * 72)
@@ -510,7 +489,6 @@ def main() -> None:
         print("  => Negligible difference: pass leakage was not inflating the")
         print("     random-split result.")
 
-    # ---- B. McNemar --------------------------------------------------
     print("\n" + "-" * 72)
     print("B. McNEMAR'S TEST (paired classifier comparison)")
     print("-" * 72)
@@ -570,7 +548,6 @@ def main() -> None:
               f"{'SIGNIFICANT' if mc3['significant'] else 'not significant'}  "
               f"({mc3['note']})")
 
-    # ---- C. Mahalanobis ----------------------------------------------
     print("\n" + "-" * 72)
     print("C. MAHALANOBIS SEPARABILITY (replaces ad-hoc metric)")
     print("-" * 72)
@@ -585,7 +562,6 @@ def main() -> None:
     print("  Reference: D < 1 means class means are closer than the typical")
     print("  within-class scatter; D > 3 indicates well-separated classes.")
 
-    # ---- D. Variance decomposition -----------------------------------
     print("\n" + "-" * 72)
     print("D. WHAT ACTUALLY DRIVES `level`?")
     print("-" * 72)
@@ -602,7 +578,6 @@ def main() -> None:
     else:
         print("  level unavailable.")
 
-    # ---- E. Within-beam classification -------------------------------
     print("\n" + "-" * 72)
     print("E. CLASSIFICATION WITHIN A SINGLE BEAM")
     print("-" * 72)
@@ -623,7 +598,6 @@ def main() -> None:
     else:
         print("  ra_cell unavailable.")
 
-    # ---- Outputs ------------------------------------------------------
     print("\n" + "-" * 72)
     print("Writing outputs...")
     pd.DataFrame([
@@ -756,7 +730,6 @@ the receiver as well as the approximate geometry.
     print("  outputs/tables/level_variance_decomposition.csv")
     print("  outputs/reports/statistical_rigour.md")
     print("=" * 72)
-
 
 if __name__ == "__main__":
     main()

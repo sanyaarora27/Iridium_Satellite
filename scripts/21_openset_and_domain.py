@@ -70,7 +70,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 
-
 try:
     from scripts.evaluation_common import (
         PASS_GAP_SECONDS,
@@ -81,7 +80,6 @@ except ModuleNotFoundError:
         PASS_GAP_SECONDS,
         assign_inferred_passes,
     )
-
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_RAW     = PROJECT_ROOT / "data" / "raw"
@@ -101,11 +99,9 @@ FEATURE_SELECTION_PROVENANCE = (
 )
 THRESHOLD_PROVENANCE = "not applicable; AUROC is threshold-free"
 
-
 def load_col(name):
     files = sorted(DATA_RAW.glob(f"{name}_*.npy"))
     return np.concatenate([np.load(f) for f in files]) if files else None
-
 
 def load_all() -> tuple[pd.DataFrame, dict]:
     """Merge v1, v2 and v3 feature tables and attach domain variables."""
@@ -147,7 +143,6 @@ def load_all() -> tuple[pd.DataFrame, dict]:
         )
 
     return df, sets
-
 
 def prepare_features(X):
     """Convert non-finite values to missing values for pipeline imputation."""
@@ -207,15 +202,12 @@ def mcnemar(a, b):
         return 1.0
     return float(scipy_stats.binomtest(n10, n01 + n10, 0.5).pvalue)
 
-
 def bootstrap_ci(correct):
     rng = np.random.default_rng(RANDOM_SEED)
     m = len(correct)
     s = [correct[rng.integers(0, m, m)].mean() for _ in range(2000)]
     return float(np.percentile(s, 2.5)), float(np.percentile(s, 97.5))
 
-
-# --- MAIN ----------------------------------------------------------------
 def main() -> None:
     print("=" * 72)
     print("Feature sets, cross-domain generalisation, and open-set rejection")
@@ -228,7 +220,6 @@ def main() -> None:
     for k, v in sets.items():
         print(f"    {k:<28}{len(v):>3} features")
 
-    # ---- A. Feature set comparison --------------------------------------
     print("\n" + "-" * 72)
     print("A. FEATURE SET COMPARISON")
     print("-" * 72)
@@ -294,7 +285,6 @@ def main() -> None:
         print(f"\n  v3 vs v1 directly: p = {p:.4f}  "
               f"{'SIGNIFICANT' if p < 0.05 else 'not significant'}")
 
-    # ---- B. Cross-domain generalisation ---------------------------------
     print("\n" + "-" * 72)
     print("B. CROSS-DOMAIN GENERALISATION")
     print("-" * 72)
@@ -385,7 +375,6 @@ def main() -> None:
             print("  => Little domain dependence, though with margins this")
             print("     small the comparison has limited power.")
 
-    # ---- C. Open-set rejection ------------------------------------------
     print("\n" + "-" * 72)
     print("C. OPEN-SET REJECTION")
     print("-" * 72)
@@ -449,7 +438,6 @@ def main() -> None:
             print("  => Cannot distinguish unknown transmitters from known ones.")
             print("     A deployed system would admit any unenrolled signal.")
 
-    # ---- Outputs --------------------------------------------------------
     print("\n" + "-" * 72)
     print("Writing outputs...")
     comp.to_csv(OUT_TABLES / "feature_set_comparison.csv", index=False)
@@ -592,7 +580,6 @@ distinguish an unenrolled transmitter from an enrolled one.
     print("  outputs/figures/openset_and_domain.png")
     print("  outputs/reports/openset_and_domain.md")
     print("=" * 72)
-
 
 if __name__ == "__main__":
     main()

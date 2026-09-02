@@ -1,0 +1,7 @@
+scenario,accept,accept_pct,flag,flag_pct,reject,reject_pct,total
+Normal/genuine,94,18.8%,406,81.2%,0,0.0%,500
+Spoofed identity,0,0.0%,91,18.2%,409,81.8%,500
+Stolen key/cloned ID,98,19.6%,402,80.4%,0,0.0%,500
+Invalid HMAC,0,0.0%,102,20.4%,398,79.6%,500
+Replay attack,0,0.0%,96,19.2%,404,80.8%,500
+Low RF confidence,94,18.8%,406,81.2%,0,0.0%,500

@@ -1,0 +1,13 @@
+scenario,scenario_label,ground_truth,n_cases,decision,count,percentage,meaning
+genuine,Genuine,GENUINE,1233,ACCEPT,302,0.24493106244931062,Correct acceptance
+genuine,Genuine,GENUINE,1233,FLAG,931,0.7550689375506894,False flag / false escalation
+genuine,Genuine,GENUINE,1233,REJECT,0,0.0,False rejection
+ordinary_identity_spoof,Claimed-ID spoof,ATTACK,4932,ACCEPT,0,0.0,False acceptance / attack passed
+ordinary_identity_spoof,Claimed-ID spoof,ATTACK,4932,FLAG,0,0.0,Attack escalated for investigation
+ordinary_identity_spoof,Claimed-ID spoof,ATTACK,4932,REJECT,4932,1.0,Attack blocked by decision rule
+replay,Replay,ATTACK,1233,ACCEPT,0,0.0,False acceptance / attack passed
+replay,Replay,ATTACK,1233,FLAG,0,0.0,Attack escalated for investigation
+replay,Replay,ATTACK,1233,REJECT,1233,1.0,Attack blocked by decision rule
+stolen_key,Stolen key,ATTACK,4932,ACCEPT,931,0.18876723438767234,False acceptance / attack passed
+stolen_key,Stolen key,ATTACK,4932,FLAG,4001,0.8112327656123277,Attack escalated for investigation
+stolen_key,Stolen key,ATTACK,4932,REJECT,0,0.0,Attack blocked by decision rule

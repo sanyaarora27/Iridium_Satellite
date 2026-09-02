@@ -40,7 +40,6 @@ from sklearn.model_selection import train_test_split
 
 from _shared import FUSION_TABLES_DIR
 
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FEATURES_CSV = PROJECT_ROOT / "outputs" / "tables" / "features.csv"
 CLASSIFIER_COMPARISON_CSV = (
@@ -61,7 +60,6 @@ NON_FEATURE = {
     "Unnamed: 0",
     "satellite_id",
 }
-
 
 def _check_against_primary_baseline(accuracy: float) -> None:
     """Compare with the saved primary RF baseline when that table exists."""
@@ -91,7 +89,6 @@ def _check_against_primary_baseline(accuracy: float) -> None:
             "baseline closely enough. Check the feature set, split and model "
             "configuration before continuing."
         )
-
 
 def main() -> None:
     print("=" * 70)
@@ -199,7 +196,6 @@ def main() -> None:
     print(f"\nSaved: {out}")
     print("Next: fusion/02_higher_layer_sim.py")
     print("=" * 70)
-
 
 if __name__ == "__main__":
     main()

@@ -73,8 +73,6 @@ try:
 except ImportError:
     HAS_STRATIFIED_GROUP_KFOLD = False
 
-
-# ─── PATHS ───────────────────────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FEATURES_CSV = PROJECT_ROOT / "outputs" / "tables" / "features.csv"
 DATA_DIR = PROJECT_ROOT / "data" / "raw"
@@ -86,8 +84,6 @@ OUTPUT_REPORTS = PROJECT_ROOT / "outputs" / "reports"
 for directory in (OUTPUT_TABLES, OUTPUT_FIGURES, OUTPUT_REPORTS):
     directory.mkdir(parents=True, exist_ok=True)
 
-
-# ─── CONFIG ──────────────────────────────────────────────────────────────────
 RANDOM_STATE = 42
 N_SPLITS = 5
 
@@ -156,7 +152,6 @@ MODELS = [
     ),
 ]
 
-
 def build_pipeline(estimator, needs_scaling: bool) -> Pipeline:
     """Create a leakage-safe preprocessing and classifier pipeline."""
     steps = []
@@ -164,7 +159,6 @@ def build_pipeline(estimator, needs_scaling: bool) -> Pipeline:
         steps.append(("scaler", StandardScaler()))
     steps.append(("model", estimator))
     return Pipeline(steps)
-
 
 def load_segmented_column(prefix: str) -> np.ndarray:
     """Concatenate all numbered .npy segments for one metadata column."""
@@ -176,7 +170,6 @@ def load_segmented_column(prefix: str) -> np.ndarray:
 
     arrays = [np.load(path, mmap_mode="r") for path in files]
     return np.concatenate(arrays)
-
 
 def attach_timestamps(features: pd.DataFrame) -> pd.DataFrame:
     """
@@ -214,7 +207,6 @@ def attach_timestamps(features: pd.DataFrame) -> pd.DataFrame:
     features["timestamp_global"] = all_timestamps[global_indices]
     return features
 
-
 def create_pass_ids(
     dataframe: pd.DataFrame,
     gap_seconds: float,
@@ -250,7 +242,6 @@ def create_pass_ids(
     print(f"Derived passes: {df['pass_id'].nunique()}")
 
     return df
-
 
 def validate_passes(df: pd.DataFrame) -> pd.DataFrame:
     """Summarise and validate the number and size of inferred passes."""
@@ -290,7 +281,6 @@ def validate_passes(df: pd.DataFrame) -> pd.DataFrame:
 
     return summary
 
-
 def make_splitter(n_splits: int):
     """Prefer class-balanced grouped folds while keeping passes disjoint."""
     if HAS_STRATIFIED_GROUP_KFOLD:
@@ -306,7 +296,6 @@ def make_splitter(n_splits: int):
         f"with {n_splits} folds"
     )
     return GroupKFold(n_splits=n_splits)
-
 
 def check_fold_integrity(splitter, X, y, groups):
     """Create splits once and verify that no pass appears on both sides."""
@@ -355,7 +344,6 @@ def check_fold_integrity(splitter, X, y, groups):
             print(f"    Warning: missing test classes {sorted(missing_test)}")
 
     return splits
-
 
 def plot_confusion_matrices(
     predictions: dict[str, np.ndarray],
@@ -409,7 +397,6 @@ def plot_confusion_matrices(
     fig.tight_layout()
     fig.savefig(output_path, dpi=140, bbox_inches="tight")
     plt.close(fig)
-
 
 def write_report(
     results: pd.DataFrame,
@@ -476,7 +463,6 @@ pass-specific channel conditions rather than a stable transmitter fingerprint.
 """
 
     output_path.write_text(report)
-
 
 def main() -> None:
     start_time = time.time()
@@ -649,7 +635,6 @@ def main() -> None:
 
     print(f"\nTotal runtime: {time.time() - start_time:.1f} seconds")
     print("=" * 76)
-
 
 if __name__ == "__main__":
     main()

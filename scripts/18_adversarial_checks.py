@@ -67,8 +67,6 @@ from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-
-# --- PATHS ----------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_RAW     = PROJECT_ROOT / "data" / "raw"
 FEATURES_CSV = PROJECT_ROOT / "outputs" / "tables" / "features.csv"
@@ -90,12 +88,9 @@ AUDIT_COLUMNS = ["run_id", "timestamp_global", "ra_cell", "level", "noise",
 
 RECEIVER_LAT, RECEIVER_LON, RECEIVER_ALT = 51.7548, -1.2544, 60.0
 
-
-# --- LOADING -------------------------------------------------------------
 def load_column(name: str) -> np.ndarray | None:
     files = sorted(DATA_RAW.glob(f"{name}_*.npy"))
     return np.concatenate([np.load(f) for f in files]) if files else None
-
 
 def load_all() -> tuple[pd.DataFrame, list[str], list[str]]:
     df = pd.read_csv(FEATURES_CSV)
@@ -115,7 +110,6 @@ def load_all() -> tuple[pd.DataFrame, list[str], list[str]]:
         attached.append(col)
     return df, features, attached
 
-
 def clean(X: np.ndarray) -> np.ndarray:
     X = X.astype(float).copy()
     for j in range(X.shape[1]):
@@ -123,7 +117,6 @@ def clean(X: np.ndarray) -> np.ndarray:
         if bad.any():
             X[bad, j] = np.nanmedian(X[~bad, j]) if (~bad).any() else 0.0
     return X
-
 
 def add_elevation(df: pd.DataFrame) -> pd.DataFrame:
     need = ("meta_ra_lat", "meta_ra_lon", "meta_ra_alt")
@@ -159,7 +152,6 @@ def add_elevation(df: pd.DataFrame) -> pd.DataFrame:
     df["elevation_deg"] = np.degrees(np.arctan2(up, np.hypot(east, north)))
     return df
 
-
 def quick_accuracy(X: np.ndarray, y: np.ndarray, seed: int = RANDOM_SEED) -> tuple[float, float]:
     """Train a Random Forest and return (accuracy, chance)."""
     X_tr, X_te, y_tr, y_te = train_test_split(
@@ -175,8 +167,6 @@ def quick_accuracy(X: np.ndarray, y: np.ndarray, seed: int = RANDOM_SEED) -> tup
     return (accuracy_score(y_te, m.predict(X_te)),
             accuracy_score(y_te, d.predict(X_te)))
 
-
-# --- MAIN ----------------------------------------------------------------
 def main() -> None:
     print("=" * 72)
     print("Adversarial checks")
@@ -188,7 +178,6 @@ def main() -> None:
     print(f"\n{len(df):,} messages, {len(features)} features")
     print(f"Metadata columns audited: {', '.join(attached)}")
 
-    # ---- A. LEAKAGE AUDIT ----------------------------------------------
     print("\n" + "-" * 72)
     print("A. LEAKAGE AUDIT - can any single metadata column identify the satellite?")
     print("-" * 72)
@@ -234,7 +223,6 @@ def main() -> None:
     else:
         print("\n  => No additional leaks. global_index was the only one.")
 
-    # ---- B. DECODE CONFIDENCE ------------------------------------------
     print("\n" + "-" * 72)
     print("B. DECODE CONFIDENCE AND DATA QUALITY")
     print("-" * 72)
@@ -288,7 +276,6 @@ def main() -> None:
     else:
         print("  confidence column unavailable.")
 
-    # ---- C. LEARNING CURVE ---------------------------------------------
     print("\n" + "-" * 72)
     print("C. LEARNING CURVE - would more data help?")
     print("-" * 72)
@@ -328,7 +315,6 @@ def main() -> None:
             print("  => Still rising. More data may help; this should be")
             print("     stated rather than assumed either way.")
 
-    # ---- D. HYPERPARAMETER SENSITIVITY ---------------------------------
     print("\n" + "-" * 72)
     print("D. HYPERPARAMETER SENSITIVITY")
     print("-" * 72)
@@ -371,7 +357,6 @@ def main() -> None:
         print("\n  => Tuning materially improves the result and should be")
         print("     applied throughout.")
 
-    # ---- OUTPUTS --------------------------------------------------------
     print("\n" + "-" * 72)
     print("Writing outputs...")
     audit.to_csv(OUT_TABLES / "leakage_audit.csv", index=False)
@@ -470,7 +455,6 @@ conclusion does not depend on the use of default settings.
     print("  outputs/figures/adversarial_checks.png")
     print("  outputs/reports/adversarial_checks.md")
     print("=" * 72)
-
 
 if __name__ == "__main__":
     main()

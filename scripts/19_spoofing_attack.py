@@ -78,8 +78,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 
-
-# --- PATHS ----------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_RAW     = PROJECT_ROOT / "data" / "raw"
 FEATURES_CSV = PROJECT_ROOT / "outputs" / "tables" / "features.csv"
@@ -110,12 +108,9 @@ CONTROLLABILITY = {
     "ra_alt":           ("direct",   "self-declared field in the payload"),
 }
 
-
-# --- LOADING -------------------------------------------------------------
 def load_metadata_column(column: str) -> np.ndarray | None:
     files = sorted(DATA_RAW.glob(f"{column}_*.npy"))
     return np.concatenate([np.load(f) for f in files]) if files else None
-
 
 def load_all() -> tuple[pd.DataFrame, list[str], list[str]]:
     df = pd.read_csv(FEATURES_CSV)
@@ -131,15 +126,12 @@ def load_all() -> tuple[pd.DataFrame, list[str], list[str]]:
             rx.append(f"meta_{col}")
     return df, features, rx
 
-
 def clean(X: np.ndarray) -> np.ndarray:
     """Convert non-finite values to NaN for train-fitted imputation."""
     X = X.astype(float).copy()
     X[~np.isfinite(X)] = np.nan
     return X
 
-
-# --- ATTACK --------------------------------------------------------------
 def run_attack(X: np.ndarray, y: np.ndarray,
                names: list[str], label: str) -> tuple[pd.DataFrame, dict]:
     """
@@ -321,7 +313,6 @@ def run_attack(X: np.ndarray, y: np.ndarray,
                                 "model": model, "X_te": X_te, "y_te": y_te,
                                 "means": means, "spread": spread}
 
-
 def single_feature_attack(state: dict, names: list[str],
                           label: str) -> pd.DataFrame:
     """
@@ -367,8 +358,6 @@ def single_feature_attack(state: dict, names: list[str],
             .sort_values("impersonation_rate", ascending=False)
             .reset_index(drop=True))
 
-
-# --- PLOT ----------------------------------------------------------------
 def plot_attack(state_feat: dict, state_meta: dict | None, path: Path) -> None:
     n = 2 if state_meta else 1
     fig, axes = plt.subplots(1, n, figsize=(8 * n, 6), squeeze=False)
@@ -396,8 +385,6 @@ def plot_attack(state_feat: dict, state_meta: dict | None, path: Path) -> None:
     plt.savefig(path, dpi=110, bbox_inches="tight")
     plt.close(fig)
 
-
-# --- MAIN ----------------------------------------------------------------
 def main() -> None:
     print("=" * 72)
     print("Spoofing attack in feature space (Step 13)")
@@ -408,7 +395,6 @@ def main() -> None:
     print(f"\n{len(df):,} messages, {len(features)} waveform features, "
           f"{len(rx)} receiver-side metadata columns")
 
-    # ---- Attack 1: waveform features -----------------------------------
     print("\n" + "-" * 72)
     print("A. ATTACK ON THE 28 WAVEFORM FEATURES")
     print("-" * 72)
@@ -424,7 +410,6 @@ def main() -> None:
         print(f"  Median alpha required: "
               f"{res_feat['alpha_required'].median():.2f}")
 
-    # ---- Attack 2: receiver-side metadata ------------------------------
     res_meta, state_meta = None, None
     if rx:
         print("\n" + "-" * 72)
@@ -452,7 +437,6 @@ def main() -> None:
                       f"{r['max_shift_sigma']:>11.2f}s"
                       f"  {r['largest_shift_feature'].replace('meta_','')}")
 
-    # ---- Single-feature attack -----------------------------------------
     print("\n" + "-" * 72)
     print("C. WHICH FEATURES ARE EASIEST TO MANIPULATE?")
     print("-" * 72)
@@ -471,7 +455,6 @@ def main() -> None:
             print(f"    {r['feature']:<22}{r['impersonation_rate']:>14.1%}"
                   f"{r['attacker_control']:>12}")
 
-    # ---- Outputs --------------------------------------------------------
     print("\n" + "-" * 72)
     print("Writing outputs...")
     all_res = (pd.concat([res_feat, res_meta], ignore_index=True)
@@ -588,7 +571,6 @@ the adversary's control.
     print("  outputs/figures/spoofing_attack.png")
     print("  outputs/reports/spoofing_attack.md")
     print("=" * 72)
-
 
 if __name__ == "__main__":
     main()

@@ -32,7 +32,6 @@ TARGET_SATS = [51, 85, 87, 92, 109]
 SAT_COLORS = {51: "#e74c3c", 85: "#3498db", 87: "#2ecc71", 92: "#9b59b6", 109: "#f39c12"}
 MAX_TS = 5e15
 
-# ── Load one burst per satellite from segment 0 ──────────────────────────
 print("Loading sample bursts...")
 samples = np.load(DATA_DIR / "samples_000.npy")
 sats = np.load(DATA_DIR / "ra_sat_000.npy")
@@ -56,10 +55,7 @@ FREQ_KHZ = np.fft.fftfreq(11000, d=1/SAMPLE_RATE) / 1e3  # freq in kHz
 SHOW_N = 2000
 t_show = T_US[:SHOW_N]
 
-
-# ══════════════════════════════════════════════════════════════════════════
 # FIGURE 1: Single satellite detailed view (Sat 51)
-# ══════════════════════════════════════════════════════════════════════════
 print("\nGenerating single-satellite figure (Sat 51)...")
 
 sat = 51
@@ -113,10 +109,7 @@ plt.savefig(OUT_FIGS / "signal_single_sat51.png", dpi=150, bbox_inches="tight")
 plt.close()
 print(f"  Saved: {OUT_FIGS / 'signal_single_sat51.png'}")
 
-
-# ══════════════════════════════════════════════════════════════════════════
 # FIGURE 2: All 5 satellites compared — time domain
-# ══════════════════════════════════════════════════════════════════════════
 print("\nGenerating 5-satellite comparison figure...")
 
 fig, axes = plt.subplots(5, 4, figsize=(18, 18))
@@ -173,10 +166,7 @@ plt.savefig(OUT_FIGS / "signal_all5_comparison.png", dpi=150, bbox_inches="tight
 plt.close()
 print(f"  Saved: {OUT_FIGS / 'signal_all5_comparison.png'}")
 
-
-# ══════════════════════════════════════════════════════════════════════════
 # FIGURE 3: All 5 spectra overlaid (most impactful comparison)
-# ══════════════════════════════════════════════════════════════════════════
 print("\nGenerating overlaid spectrum comparison...")
 
 fig, axes = plt.subplots(1, 3, figsize=(18, 5))
@@ -229,8 +219,6 @@ plt.savefig(OUT_FIGS / "signal_all5_spectrum.png", dpi=150, bbox_inches="tight")
 plt.close()
 print(f"  Saved: {OUT_FIGS / 'signal_all5_spectrum.png'}")
 
-
-# ── Also generate per-satellite individual figures for appendix ──────────
 print("\nGenerating individual satellite figures...")
 for sat in TARGET_SATS:
     burst = bursts[sat]

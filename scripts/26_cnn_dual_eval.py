@@ -71,7 +71,6 @@ for sat in TARGET_SATS:
     print(f"  Satellite {sat}: {(y == sat_to_idx[sat]).sum()}")
 print(f"\n  Session A: {(session_groups == 0).sum()} | B: {(session_groups == 1).sum()} | C: {(session_groups == 2).sum()}")
 
-
 def run_fold(train_idx, test_idx, fold_name, evaluation_type, n_epochs=EPOCHS):
     inner_train_idx, inner_validation_idx, validation_method = split_inner_validation(
         train_idx, y, session_groups, evaluation_type, seed=SEED

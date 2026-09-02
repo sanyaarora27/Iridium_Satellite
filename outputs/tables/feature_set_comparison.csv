@@ -1,0 +1,6 @@
+feature_set,n_features,accuracy,ci_low,ci_high,p_vs_chance,evaluation_scope,model_name,rf_n_estimators,rf_scaled,imputer,random_seed
+chance,0,0.20843471208434713,0.18732765612327656,0.23195458231954583,1.0,closed-set stratified 80/20 comparison,random_forest,200,False,median,42
+v1 (hand-crafted),28,0.24493106244931062,0.2222222222222222,0.26926196269261965,0.03687795830393246,closed-set stratified 80/20 comparison,random_forest,200,False,median,42
+v2 (amplitude-invariant),26,0.23519870235198703,0.21086780210867803,0.2587185725871857,0.12225175533080532,closed-set stratified 80/20 comparison,random_forest,200,False,median,42
+v3 (PA nonlinearity),20,0.22060016220600162,0.1978913219789132,0.2441200324412003,0.4940560675218313,closed-set stratified 80/20 comparison,random_forest,200,False,median,42
+all combined,74,0.24898621248986214,0.22546634225466342,0.27412814274128144,0.020791800247607847,closed-set stratified 80/20 comparison,random_forest,200,False,median,42

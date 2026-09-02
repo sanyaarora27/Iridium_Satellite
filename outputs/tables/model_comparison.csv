@@ -1,0 +1,133 @@
+model,evaluation_protocol,metric,value,source_csv
+Random Forest,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy,0.2449,classifier_comparison.csv
+Random Forest,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy_ci_low,0.2222,classifier_comparison.csv
+Random Forest,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy_ci_high,0.2693,classifier_comparison.csv
+Random Forest,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",macro_f1,0.2422,classifier_comparison.csv
+Random Forest,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",cv_accuracy_mean,0.2398,classifier_comparison.csv
+Random Forest,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",cv_accuracy_std,0.0131,classifier_comparison.csv
+Random Forest,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",train_eval_seconds,5.8,classifier_comparison.csv
+Random Forest,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",feature_scaling,unscaled,classifier_comparison.csv
+Neural Net (MLP),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy,0.2328,classifier_comparison.csv
+Neural Net (MLP),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy_ci_low,0.2092,classifier_comparison.csv
+Neural Net (MLP),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy_ci_high,0.2563,classifier_comparison.csv
+Neural Net (MLP),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",macro_f1,0.2308,classifier_comparison.csv
+Neural Net (MLP),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",cv_accuracy_mean,0.2314,classifier_comparison.csv
+Neural Net (MLP),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",cv_accuracy_std,0.0081,classifier_comparison.csv
+Neural Net (MLP),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",train_eval_seconds,12.9,classifier_comparison.csv
+Neural Net (MLP),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",feature_scaling,scaled,classifier_comparison.csv
+Logistic Regression,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy,0.2311,classifier_comparison.csv
+Logistic Regression,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy_ci_low,0.2076,classifier_comparison.csv
+Logistic Regression,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy_ci_high,0.2539,classifier_comparison.csv
+Logistic Regression,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",macro_f1,0.2232,classifier_comparison.csv
+Logistic Regression,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",cv_accuracy_mean,0.2357,classifier_comparison.csv
+Logistic Regression,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",cv_accuracy_std,0.0116,classifier_comparison.csv
+Logistic Regression,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",train_eval_seconds,1.8,classifier_comparison.csv
+Logistic Regression,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",feature_scaling,scaled,classifier_comparison.csv
+SVM (RBF),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy,0.2238,classifier_comparison.csv
+SVM (RBF),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy_ci_low,0.2028,classifier_comparison.csv
+SVM (RBF),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy_ci_high,0.2474,classifier_comparison.csv
+SVM (RBF),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",macro_f1,0.2179,classifier_comparison.csv
+SVM (RBF),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",cv_accuracy_mean,0.2333,classifier_comparison.csv
+SVM (RBF),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",cv_accuracy_std,0.0062,classifier_comparison.csv
+SVM (RBF),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",train_eval_seconds,9.7,classifier_comparison.csv
+SVM (RBF),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",feature_scaling,scaled,classifier_comparison.csv
+Decision Tree,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy,0.2157,classifier_comparison.csv
+Decision Tree,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy_ci_low,0.1938,classifier_comparison.csv
+Decision Tree,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy_ci_high,0.2393,classifier_comparison.csv
+Decision Tree,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",macro_f1,0.2156,classifier_comparison.csv
+Decision Tree,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",cv_accuracy_mean,0.2337,classifier_comparison.csv
+Decision Tree,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",cv_accuracy_std,0.0074,classifier_comparison.csv
+Decision Tree,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",train_eval_seconds,1.0,classifier_comparison.csv
+Decision Tree,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",feature_scaling,unscaled,classifier_comparison.csv
+k-NN (k=5),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy,0.2141,classifier_comparison.csv
+k-NN (k=5),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy_ci_low,0.1914,classifier_comparison.csv
+k-NN (k=5),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy_ci_high,0.2368,classifier_comparison.csv
+k-NN (k=5),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",macro_f1,0.2121,classifier_comparison.csv
+k-NN (k=5),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",cv_accuracy_mean,0.1978,classifier_comparison.csv
+k-NN (k=5),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",cv_accuracy_std,0.0111,classifier_comparison.csv
+k-NN (k=5),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",train_eval_seconds,4.8,classifier_comparison.csv
+k-NN (k=5),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",feature_scaling,scaled,classifier_comparison.csv
+Baseline (most frequent),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy,0.2084,classifier_comparison.csv
+Baseline (most frequent),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy_ci_low,0.1873,classifier_comparison.csv
+Baseline (most frequent),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy_ci_high,0.232,classifier_comparison.csv
+Baseline (most frequent),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",macro_f1,0.069,classifier_comparison.csv
+Baseline (most frequent),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",cv_accuracy_mean,0.2079,classifier_comparison.csv
+Baseline (most frequent),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",cv_accuracy_std,0.0,classifier_comparison.csv
+Baseline (most frequent),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",train_eval_seconds,1.8,classifier_comparison.csv
+Baseline (most frequent),"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",feature_scaling,unscaled,classifier_comparison.csv
+Gaussian Naive Bayes,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy,0.2076,classifier_comparison.csv
+Gaussian Naive Bayes,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy_ci_low,0.1873,classifier_comparison.csv
+Gaussian Naive Bayes,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",accuracy_ci_high,0.2303,classifier_comparison.csv
+Gaussian Naive Bayes,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",macro_f1,0.0994,classifier_comparison.csv
+Gaussian Naive Bayes,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",cv_accuracy_mean,0.2071,classifier_comparison.csv
+Gaussian Naive Bayes,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",cv_accuracy_std,0.007,classifier_comparison.csv
+Gaussian Naive Bayes,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",train_eval_seconds,0.5,classifier_comparison.csv
+Gaussian Naive Bayes,"Stratified 80/20 split + 5-fold CV (message-level, classical/MLP baselines)",feature_scaling,unscaled,classifier_comparison.csv
+Decision Tree,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",accuracy,0.19003265954711757,pass_aware_results.csv
+Decision Tree,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",accuracy_std,0.011732623717493331,pass_aware_results.csv
+Decision Tree,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",macro_f1,0.1699214077409692,pass_aware_results.csv
+Decision Tree,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",macro_f1_std,0.015290968574453103,pass_aware_results.csv
+Decision Tree,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",min_fold_accuracy,0.1808300395256917,pass_aware_results.csv
+Decision Tree,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",max_fold_accuracy,0.21097560975609755,pass_aware_results.csv
+Decision Tree,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",feature_scaling,unscaled,pass_aware_results.csv
+Neural Net (MLP),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",accuracy,0.1697698834964572,pass_aware_results.csv
+Neural Net (MLP),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",accuracy_std,0.03494293426282914,pass_aware_results.csv
+Neural Net (MLP),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",macro_f1,0.1585451404165553,pass_aware_results.csv
+Neural Net (MLP),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",macro_f1_std,0.030074905547954753,pass_aware_results.csv
+Neural Net (MLP),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",min_fold_accuracy,0.13446396123561477,pass_aware_results.csv
+Neural Net (MLP),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",max_fold_accuracy,0.22926829268292684,pass_aware_results.csv
+Neural Net (MLP),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",feature_scaling,scaled,pass_aware_results.csv
+k-NN (k=5),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",accuracy,0.1674704129534485,pass_aware_results.csv
+k-NN (k=5),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",accuracy_std,0.024456232923875037,pass_aware_results.csv
+k-NN (k=5),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",macro_f1,0.1535111826977386,pass_aware_results.csv
+k-NN (k=5),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",macro_f1_std,0.026263837907952493,pass_aware_results.csv
+k-NN (k=5),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",min_fold_accuracy,0.1274703557312253,pass_aware_results.csv
+k-NN (k=5),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",max_fold_accuracy,0.1975609756097561,pass_aware_results.csv
+k-NN (k=5),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",feature_scaling,scaled,pass_aware_results.csv
+Random Forest,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",accuracy,0.15548877574101932,pass_aware_results.csv
+Random Forest,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",accuracy_std,0.041294905747995034,pass_aware_results.csv
+Random Forest,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",macro_f1,0.1527339530911904,pass_aware_results.csv
+Random Forest,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",macro_f1_std,0.03478116062806251,pass_aware_results.csv
+Random Forest,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",min_fold_accuracy,0.11508176862507571,pass_aware_results.csv
+Random Forest,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",max_fold_accuracy,0.2329268292682927,pass_aware_results.csv
+Random Forest,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",feature_scaling,unscaled,pass_aware_results.csv
+Gaussian Naive Bayes,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",accuracy,0.1309773379738208,pass_aware_results.csv
+Gaussian Naive Bayes,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",accuracy_std,0.07568108022257497,pass_aware_results.csv
+Gaussian Naive Bayes,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",macro_f1,0.07554712064662143,pass_aware_results.csv
+Gaussian Naive Bayes,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",macro_f1_std,0.04300792622748224,pass_aware_results.csv
+Gaussian Naive Bayes,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",min_fold_accuracy,0.041181041181041184,pass_aware_results.csv
+Gaussian Naive Bayes,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",max_fold_accuracy,0.24390243902439024,pass_aware_results.csv
+Gaussian Naive Bayes,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",feature_scaling,unscaled,pass_aware_results.csv
+Logistic Regression,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",accuracy,0.10032025861914022,pass_aware_results.csv
+Logistic Regression,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",accuracy_std,0.042315914435353555,pass_aware_results.csv
+Logistic Regression,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",macro_f1,0.1083616610948698,pass_aware_results.csv
+Logistic Regression,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",macro_f1_std,0.034755106382795026,pass_aware_results.csv
+Logistic Regression,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",min_fold_accuracy,0.06238643246517262,pass_aware_results.csv
+Logistic Regression,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",max_fold_accuracy,0.18170731707317073,pass_aware_results.csv
+Logistic Regression,"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",feature_scaling,scaled,pass_aware_results.csv
+SVM (RBF),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",accuracy,0.0682518488117487,pass_aware_results.csv
+SVM (RBF),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",accuracy_std,0.04673219852244145,pass_aware_results.csv
+SVM (RBF),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",macro_f1,0.07625896189267348,pass_aware_results.csv
+SVM (RBF),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",macro_f1_std,0.045299507723541785,pass_aware_results.csv
+SVM (RBF),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",min_fold_accuracy,0.03230437903804738,pass_aware_results.csv
+SVM (RBF),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",max_fold_accuracy,0.15853658536585366,pass_aware_results.csv
+SVM (RBF),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",feature_scaling,scaled,pass_aware_results.csv
+Baseline (most frequent),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",accuracy,0.013901266870511015,pass_aware_results.csv
+Baseline (most frequent),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",accuracy_std,0.017794558589732168,pass_aware_results.csv
+Baseline (most frequent),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",macro_f1,0.005364564718416217,pass_aware_results.csv
+Baseline (most frequent),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",macro_f1_std,0.006820888510317065,pass_aware_results.csv
+Baseline (most frequent),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",min_fold_accuracy,0.0006056935190793458,pass_aware_results.csv
+Baseline (most frequent),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",max_fold_accuracy,0.045454545454545456,pass_aware_results.csv
+Baseline (most frequent),"Pass-aware grouped cross-validation (session/pass-level, classical/MLP baselines)",feature_scaling,unscaled,pass_aware_results.csv
+"MLP (feature-based, PyTorch)",Stratified 5-fold,accuracy,0.2564,mlp_results.csv
+"MLP (feature-based, PyTorch)",Stratified 5-fold,macro_f1,0.2429,mlp_results.csv
+"MLP (feature-based, PyTorch)",Cross-session,accuracy,0.2381,mlp_results.csv
+"MLP (feature-based, PyTorch)",Cross-session,macro_f1,0.2210,mlp_results.csv
+1D-CNN (raw IQ),"Cross-session GroupKFold (raw IQ, 3-fold mean)",accuracy,0.2438,cnn_results.csv
+1D-CNN (raw IQ),"Cross-session GroupKFold (raw IQ, 3-fold mean)",macro_f1,0.1863,cnn_results.csv
+28 waveform features,Authentication / EER evaluation (argmax decision rule + threshold sweep),accuracy,0.24817518248175183,authentication_metrics.csv
+28 waveform features,Authentication / EER evaluation (argmax decision rule + threshold sweep),EER,0.4762773722627737,authentication_metrics.csv
+28 waveform features,Authentication / EER evaluation (argmax decision rule + threshold sweep),n_genuine_total,1233,authentication_metrics.csv
+receiver-side metadata,Authentication / EER evaluation (argmax decision rule + threshold sweep),accuracy,0.2733171127331711,authentication_metrics.csv
+receiver-side metadata,Authentication / EER evaluation (argmax decision rule + threshold sweep),EER,0.4282238442822385,authentication_metrics.csv
+receiver-side metadata,Authentication / EER evaluation (argmax decision rule + threshold sweep),n_genuine_total,1233,authentication_metrics.csv

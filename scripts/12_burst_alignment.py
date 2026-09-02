@@ -60,8 +60,6 @@ import numpy as np
 import pandas as pd
 from scipy import stats as scipy_stats
 
-
-# --- PATHS ----------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_RAW     = PROJECT_ROOT / "data" / "raw"
 OUT_TABLES   = PROJECT_ROOT / "outputs" / "tables"
@@ -70,8 +68,6 @@ OUT_REPORTS  = PROJECT_ROOT / "outputs" / "reports"
 for d in (OUT_TABLES, OUT_FIGURES, OUT_REPORTS):
     d.mkdir(parents=True, exist_ok=True)
 
-
-# --- CONFIG ---------------------------------------------------------------
 TARGET_SATELLITES    = [92, 85, 87, 51, 109]
 SAMPLE_RATE_HZ       = 25_000_000
 # Derived from the data rather than hardcoded, so the script does not
@@ -97,8 +93,6 @@ BURST_THRESHOLD_FRAC = 0.25
 # How many example envelopes to keep per satellite for its detail figure.
 EXAMPLES_PER_SATELLITE = 6
 
-
-# --- STEP 1: PICK MESSAGES -----------------------------------------------
 def select_messages() -> dict[int, list[dict]]:
     """
     Choose MESSAGES_PER_SAT messages for each target satellite, grouped by
@@ -125,13 +119,10 @@ def select_messages() -> dict[int, list[dict]]:
 
     return by_segment
 
-
-# --- STEP 2: BURST DETECTION ---------------------------------------------
 def smooth(x: np.ndarray, window: int) -> np.ndarray:
     """Moving average via convolution, same length as input."""
     kernel = np.ones(window) / window
     return np.convolve(x, kernel, mode="same")
-
 
 def detect_burst(i: np.ndarray, q: np.ndarray) -> dict:
     """
@@ -183,8 +174,6 @@ def detect_burst(i: np.ndarray, q: np.ndarray) -> dict:
             "burst_fraction": duration / n, "snr_db": snr_db,
             "detected": True}
 
-
-# --- STEP 3: FEATURES, FULL WINDOW vs BURST ONLY -------------------------
 def quick_features(i: np.ndarray, q: np.ndarray) -> dict:
     """
     A small, representative subset of the 28 features -- enough to test
@@ -203,7 +192,6 @@ def quick_features(i: np.ndarray, q: np.ndarray) -> dict:
         "iq_corr":     float(np.corrcoef(i, q)[0, 1])
                        if np.std(i) > 0 and np.std(q) > 0 else 0.0,
     }
-
 
 def anova_f_per_feature(df: pd.DataFrame,
                         feature_cols: list[str],
@@ -229,8 +217,6 @@ def anova_f_per_feature(df: pd.DataFrame,
             out[col] = np.nan
     return out
 
-
-# --- STEP 4: PLOTS -------------------------------------------------------
 def plot_alignment(records: pd.DataFrame,
                    examples: list[tuple[int, np.ndarray, dict]],
                    path: Path) -> None:
@@ -299,7 +285,6 @@ def plot_alignment(records: pd.DataFrame,
     plt.tight_layout()
     plt.savefig(path, dpi=110, bbox_inches="tight")
     plt.close(fig)
-
 
 def plot_single_satellite(sat: int,
                           sat_records: pd.DataFrame,
@@ -376,8 +361,6 @@ def plot_single_satellite(sat: int,
     plt.savefig(path, dpi=110, bbox_inches="tight")
     plt.close(fig)
 
-
-# --- MAIN ----------------------------------------------------------------
 def main() -> None:
     print("=" * 70)
     print("Burst alignment diagnostic")
@@ -440,7 +423,6 @@ def main() -> None:
 
     df = pd.DataFrame(records)
 
-    # --- Report burst geometry -------------------------------------------
     print("\nStep 3 - Burst geometry:")
     n_win = int(df["window_length"].iloc[0])
     bf = df["burst_fraction"]
@@ -475,7 +457,6 @@ def main() -> None:
                    "timing. This is a genuine confound.")
     print(f"\n  => {verdict}")
 
-    # --- The decisive test: does trimming help? --------------------------
     print("\nStep 4 - Class-discriminative power, full window vs burst only:")
     names = ["std_I", "std_Q", "signal_power", "papr", "kurt_I", "iq_corr"]
     f_full  = anova_f_per_feature(df, [f"full_{n}"  for n in names], "satellite_id")
@@ -515,7 +496,6 @@ def main() -> None:
     # For reference: F ~ 1 means no separation at all
     print(f"\n  (F = 1.0 would mean no class separation whatsoever.)")
 
-    # --- Outputs ---------------------------------------------------------
     print("\nStep 5 - Writing outputs...")
     df.to_csv(OUT_TABLES / "burst_alignment.csv", index=False)
     plot_alignment(df, examples, OUT_FIGURES / "burst_alignment.png")
@@ -594,7 +574,6 @@ the F-statistics materially. The measured result is reported above.
     print("  outputs/figures/burst_alignment.png")
     print("  outputs/reports/burst_alignment.md")
     print("\n" + "=" * 70)
-
 
 if __name__ == "__main__":
     main()

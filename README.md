@@ -1,37 +1,79 @@
-# Iridium_Satellite
+# Multi-Layer Satellite Authentication Prototype
 
-scripts/
+This repository contains the source code and experimental outputs for an MSc
+Cyber Security dissertation investigating satellite authentication using
+physical-layer RF fingerprinting together with simulated higher-layer
+authentication and freshness controls.
 
-# Dataset exploration
-01_explore_dataset.py
-02_plot_one_signal.py
-03_five_satellites.py
+## Project Structure
 
-# Baseline pipeline
-04_extract_features.py
-05_train_classifiers.py
-06_pass_aware_evaluation.py
-07_feature_importance.py
-08_results_table.py
+- `scripts/` - RF fingerprinting, feature extraction, machine-learning
+  evaluation and diagnostic experiments.
+- `fusion/` - higher-layer authentication simulation, fusion policy and
+  security-scenario evaluation.
+- `tests/` - automated tests for evaluation methodology, CNN utilities,
+  open-set evaluation and fusion logic.
+- `outputs/` - generated tables, figures and reports used during evaluation.
 
-# Diagnostic analysis
-09_diagnose_features.py
-10_position_sanity.py
-11_elevation_doppler.py
-12_burst_alignment.py
-13_statistical_rigour.py
-14_beam_and_ablation.py
+## Dataset
 
-# Feature engineering
-15_extract_features_v2.py
-16_extract_features_v3.py
-17_compare_v1_v2.py
+The raw Iridium I/Q dataset is not included in this archive because of its
+size. The experimental pipeline expects the required dataset files under:
 
-# Security and authentication
-18_adversarial_checks.py
-19_spoofing_attack.py
-20_authentication_metrics.py
-21_openset_and_domain.py
+    data/raw/
 
-# Utilities
-iq_utils.py
+The experiments use observations from five Iridium satellites:
+51, 85, 87, 92 and 109.
+
+## Environment
+
+Python 3.10.20
+
+Install dependencies with:
+
+    pip install -r requirements.txt
+
+## Main Experimental Scripts
+
+Classical RF fingerprinting:
+
+    python scripts/05_train_classifiers.py
+
+Pass-aware evaluation:
+
+    python scripts/06_pass_aware_evaluation.py
+
+Authentication metrics:
+
+    python scripts/20_authentication_metrics.py
+
+Open-set and cross-domain evaluation:
+
+    python scripts/21_openset_and_domain.py
+
+Final Chapter 5 validation:
+
+    python scripts/33_ch5_final_validation.py
+
+Fusion evaluation:
+
+    python fusion/04_fusion_eval.py
+
+Fusion output validation:
+
+    python fusion/07_validate_outputs.py
+
+## Automated Tests
+
+Run:
+
+    python -m pytest -q
+
+The submitted version passes 26 automated tests.
+
+## Important Scope Note
+
+The higher-layer HMAC and freshness mechanisms are simulated prototype
+controls and do not implement the operational Iridium authentication protocol.
+RF fingerprint evidence is treated as supplementary evidence rather than an
+autonomous authentication mechanism.

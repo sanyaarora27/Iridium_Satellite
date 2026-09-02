@@ -1,0 +1,5 @@
+scenario,scenario_label,ground_truth,n_cases,ideal_decision,ideal_accept_count,ideal_flag_count,ideal_reject_count
+genuine,Genuine,GENUINE,1233,ACCEPT,1233,0,0
+ordinary_identity_spoof,Claimed-ID spoof,ATTACK,4932,REJECT,0,0,4932
+replay,Replay,ATTACK,1233,REJECT,0,0,1233
+stolen_key,Stolen key,ATTACK,4932,FLAG,0,4932,0

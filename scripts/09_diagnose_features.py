@@ -56,7 +56,6 @@ from sklearn.decomposition import PCA
 from sklearn.feature_selection import f_classif
 from sklearn.preprocessing import StandardScaler
 
-# ─── PATHS ───────────────────────────────────────────────────────────────────
 PROJECT_ROOT   = Path(__file__).resolve().parent.parent
 DATA_DIR       = PROJECT_ROOT / "data" / "raw"
 FEATURES_CSV   = PROJECT_ROOT / "outputs" / "tables" / "features.csv"
@@ -64,7 +63,6 @@ OUTPUT_FIGURES = PROJECT_ROOT / "outputs" / "figures"
 OUTPUT_REPORTS = PROJECT_ROOT / "outputs" / "reports"
 OUTPUT_FIGURES.mkdir(parents=True, exist_ok=True)
 OUTPUT_REPORTS.mkdir(parents=True, exist_ok=True)
-
 
 def main() -> None:
     print("=" * 70)
@@ -78,7 +76,6 @@ def main() -> None:
     y = df["satellite_id"].to_numpy()
     g = df["global_index"].to_numpy()
 
-    # ─── CHECK 1: ALIGNMENT via the 'level' metadata column ─────────────
     print("\nCHECK 1 — Alignment: dataset 'level' vs extracted signal_power")
     level_files = sorted(DATA_DIR.glob("level_*.npy"))
     if not level_files:
@@ -111,7 +108,6 @@ def main() -> None:
                     dpi=120, bbox_inches="tight")
         plt.close(fig)
 
-    # ─── CHECK 2: FEATURE DEGENERACY ─────────────────────────────────────
     # Coefficient of variation = std / |mean| (guarded near zero-mean
     # features by falling back to plain std). Near-zero spread means the
     # feature is effectively a constant.
@@ -130,7 +126,6 @@ def main() -> None:
     else:
         print(f"  {n_dead} near-constant feature(s) found.")
 
-    # ─── CHECK 3: ANOVA F-test per feature ───────────────────────────────
     # F = between-class variance / within-class variance. Under the null
     # (feature tells you nothing about the satellite), F ~= 1.
     print("\nCHECK 3 — Per-feature class separation (ANOVA F, sorted)")
@@ -145,7 +140,6 @@ def main() -> None:
     print("   with ~6,000 messages, genuinely useful features show F in")
     print("   the tens to hundreds.)")
 
-    # ─── CHECK 4: PCA scatter ────────────────────────────────────────────
     print("\nCHECK 4 — PCA of the standardised 28-D feature space")
     Xs = StandardScaler().fit_transform(X)
     pca = PCA(n_components=2, random_state=42)
@@ -181,7 +175,6 @@ def main() -> None:
     print("  Check 1 near-zero                 -> bug: fix alignment first,")
     print("      then re-run 04 and 05. Do not interpret anything yet.")
     print("=" * 70)
-
 
 if __name__ == "__main__":
     main()

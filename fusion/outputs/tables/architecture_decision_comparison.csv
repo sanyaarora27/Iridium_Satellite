@@ -1,0 +1,17 @@
+scenario,scenario_label,ground_truth,architecture,n_cases,accept_count,accept_rate,flag_count,flag_rate,reject_count,reject_rate,correct_accept_count,correct_accept_rate,false_alarm_count,false_alarm_rate,false_accept_count,false_accept_rate,attack_flag_count,attack_flag_rate,attack_block_count,attack_block_rate
+genuine,Genuine,GENUINE,RF only,1233,302,0.24493106244931062,0,0.0,931,0.7550689375506894,302,0.24493106244931062,931,0.7550689375506894,0,0.0,0,0.0,0,0.0
+genuine,Genuine,GENUINE,HMAC only,1233,1233,1.0,0,0.0,0,0.0,1233,1.0,0,0.0,0,0.0,0,0.0,0,0.0
+genuine,Genuine,GENUINE,HMAC + freshness,1233,1233,1.0,0,0.0,0,0.0,1233,1.0,0,0.0,0,0.0,0,0.0,0,0.0
+genuine,Genuine,GENUINE,Full fusion,1233,302,0.24493106244931062,931,0.7550689375506894,0,0.0,302,0.24493106244931062,931,0.7550689375506894,0,0.0,0,0.0,0,0.0
+ordinary_identity_spoof,Claimed-ID spoof,ATTACK,RF only,4932,931,0.18876723438767234,0,0.0,4001,0.8112327656123277,0,0.0,0,0.0,931,0.18876723438767234,0,0.0,4001,0.8112327656123277
+ordinary_identity_spoof,Claimed-ID spoof,ATTACK,HMAC only,4932,0,0.0,0,0.0,4932,1.0,0,0.0,0,0.0,0,0.0,0,0.0,4932,1.0
+ordinary_identity_spoof,Claimed-ID spoof,ATTACK,HMAC + freshness,4932,0,0.0,0,0.0,4932,1.0,0,0.0,0,0.0,0,0.0,0,0.0,4932,1.0
+ordinary_identity_spoof,Claimed-ID spoof,ATTACK,Full fusion,4932,0,0.0,0,0.0,4932,1.0,0,0.0,0,0.0,0,0.0,0,0.0,4932,1.0
+replay,Replay,ATTACK,RF only,1233,302,0.24493106244931062,0,0.0,931,0.7550689375506894,0,0.0,0,0.0,302,0.24493106244931062,0,0.0,931,0.7550689375506894
+replay,Replay,ATTACK,HMAC only,1233,1233,1.0,0,0.0,0,0.0,0,0.0,0,0.0,1233,1.0,0,0.0,0,0.0
+replay,Replay,ATTACK,HMAC + freshness,1233,0,0.0,0,0.0,1233,1.0,0,0.0,0,0.0,0,0.0,0,0.0,1233,1.0
+replay,Replay,ATTACK,Full fusion,1233,0,0.0,0,0.0,1233,1.0,0,0.0,0,0.0,0,0.0,0,0.0,1233,1.0
+stolen_key,Stolen key,ATTACK,RF only,4932,931,0.18876723438767234,0,0.0,4001,0.8112327656123277,0,0.0,0,0.0,931,0.18876723438767234,0,0.0,4001,0.8112327656123277
+stolen_key,Stolen key,ATTACK,HMAC only,4932,4932,1.0,0,0.0,0,0.0,0,0.0,0,0.0,4932,1.0,0,0.0,0,0.0
+stolen_key,Stolen key,ATTACK,HMAC + freshness,4932,4932,1.0,0,0.0,0,0.0,0,0.0,0,0.0,4932,1.0,0,0.0,0,0.0
+stolen_key,Stolen key,ATTACK,Full fusion,4932,931,0.18876723438767234,4001,0.8112327656123277,0,0.0,0,0.0,0,0.0,931,0.18876723438767234,4001,0.8112327656123277,0,0.0

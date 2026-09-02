@@ -36,7 +36,6 @@ from sklearn.preprocessing import label_binarize
 
 warnings.filterwarnings("ignore")
 
-# ── Config ────────────────────────────────────────────────────────────────
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -72,18 +71,16 @@ MAX_VALID_TIMESTAMP = 5e15
 np.random.seed(SEED)
 torch.manual_seed(SEED)
 
-
-# ── 1. Load data ──────────────────────────────────────────────────────────
 print("=" * 70)
 print("Step 1 – Loading all segments")
 print("=" * 70)
 
-all_iq      = []   # raw IQ bursts
-all_labels  = []   # satellite IDs
-all_ts      = []   # timestamps (for session assignment)
+all_iq      = []
+all_labels  = []
+all_ts      = []
 
 for seg in range(N_SEGMENTS):
-    samples = np.load(DATA_DIR / f"samples_{seg:03d}.npy")      # (N, 11000) complex64
+    samples = np.load(DATA_DIR / f"samples_{seg:03d}.npy")
     sats    = np.load(DATA_DIR / f"ra_sat_{seg:03d}.npy")
     ts      = np.load(DATA_DIR / f"timestamp_{seg:03d}.npy")
 
@@ -92,7 +89,7 @@ for seg in range(N_SEGMENTS):
         if mask.sum() == 0:
             continue
 
-        iq_bursts = samples[mask]       # complex IQ
+        iq_bursts = samples[mask]
         sat_ts    = ts[mask]
 
         all_iq.append(iq_bursts)
@@ -110,8 +107,6 @@ print(f"  IQ shape per burst: {all_iq[0].shape}")
 for sat in TARGET_SATS:
     print(f"  Satellite {sat}: {(all_labels == sat).sum()} bursts")
 
-
-# ── 2. Assign session groups ─────────────────────────────────────────────
 print("\n" + "=" * 70)
 print("Step 2 – Assigning session groups from timestamps")
 print("=" * 70)
@@ -133,15 +128,11 @@ for sess in range(3):
         if n > 0:
             print(f"    Sat {sat}: {n}")
 
-
-# ── 3. Encode labels ─────────────────────────────────────────────────────
 sat_to_idx = {sat: i for i, sat in enumerate(TARGET_SATS)}
 idx_to_sat = {i: sat for sat, i in sat_to_idx.items()}
 y = np.array([sat_to_idx[s] for s in all_labels])
 n_classes = len(TARGET_SATS)
 
-
-# ── 4. PyTorch Dataset ───────────────────────────────────────────────────
 class IQDataset(Dataset):
     """
     Converts complex IQ into 2-channel real tensor: (2, BURST_LEN).
@@ -156,7 +147,7 @@ class IQDataset(Dataset):
         return len(self.labels)
 
     def __getitem__(self, idx):
-        iq = self.iq[idx].copy()  # (11000, 2)
+        iq = self.iq[idx].copy()
 
         # Truncate or pad to BURST_LEN
         if len(iq) > BURST_LEN:
@@ -183,8 +174,6 @@ class IQDataset(Dataset):
 
         return torch.tensor(x), torch.tensor(self.labels[idx], dtype=torch.long)
 
-
-# ── 5. 1D-CNN Model ──────────────────────────────────────────────────────
 class SatCNN(nn.Module):
     """
     3-block 1D-CNN for RF fingerprinting on raw IQ bursts.
@@ -232,12 +221,10 @@ class SatCNN(nn.Module):
         x = self.block1(x)
         x = self.block2(x)
         x = self.block3(x)
-        x = self.gap(x).squeeze(-1)   # (batch, 128)
+        x = self.gap(x).squeeze(-1)
         x = self.classifier(x)
         return x
 
-
-# ── 6. Training loop ─────────────────────────────────────────────────────
 def train_one_epoch(model, loader, criterion, optimizer):
     model.train()
     total_loss, correct, total = 0, 0, 0
@@ -252,7 +239,6 @@ def train_one_epoch(model, loader, criterion, optimizer):
         correct += (logits.argmax(1) == y_batch).sum().item()
         total += len(y_batch)
     return total_loss / total, correct / total
-
 
 @torch.no_grad()
 def evaluate(model, loader):
@@ -276,8 +262,6 @@ def evaluate(model, loader):
     y_true = all_y.numpy()
     return total_loss / total, correct / total, preds, y_true, probs
 
-
-# ── 7. Cross-session GroupKFold ───────────────────────────────────────────
 print("\n" + "=" * 70)
 print("Step 3 – 3-Fold Cross-Session GroupKFold Training")
 print("=" * 70)
@@ -360,8 +344,6 @@ for fold, (train_idx, test_idx) in enumerate(gkf.split(all_iq, y, groups=session
     all_fold_probs.append(probs)
     fold_histories.append(history)
 
-
-# ── 8. Aggregate results ─────────────────────────────────────────────────
 print("\n" + "=" * 70)
 print("Step 4 – Aggregate Results")
 print("=" * 70)
@@ -403,8 +385,6 @@ for i, sat in enumerate(TARGET_SATS):
     far = fp / (fp + tp) if (fp + tp) > 0 else 0
     print(f"  Sat {sat:>8}  {pd:>12.4f}  {pfa:>12.4f}  {far:>12.4f}")
 
-
-# ── 9. Save results table ────────────────────────────────────────────────
 import csv
 with open(OUT_TABLES / "cnn_results.csv", "w", newline="") as f:
     w = csv.DictWriter(f, fieldnames=["fold", "test_session", "n_train", "n_test",
@@ -416,8 +396,6 @@ with open(OUT_TABLES / "cnn_results.csv", "w", newline="") as f:
                 "accuracy": f"{overall_acc:.4f}", "macro_f1": f"{overall_f1:.4f}"})
 print(f"\n  Saved: {OUT_TABLES / 'cnn_results.csv'}")
 
-
-# ── 10. Plot loss curves ─────────────────────────────────────────────────
 fig, axes = plt.subplots(2, 3, figsize=(15, 8))
 for fold_i, hist in enumerate(fold_histories):
     # Loss
@@ -446,8 +424,6 @@ plt.savefig(OUT_FIGS / "cnn_loss_curves.png", dpi=150, bbox_inches="tight")
 plt.close()
 print(f"  Saved: {OUT_FIGS / 'cnn_loss_curves.png'}")
 
-
-# ── 11. Plot confusion matrix ────────────────────────────────────────────
 fig, ax = plt.subplots(figsize=(8, 6))
 sns.heatmap(cm, annot=True, fmt="d", cmap="Blues",
             xticklabels=sat_names, yticklabels=sat_names, ax=ax)
@@ -460,8 +436,6 @@ plt.savefig(OUT_FIGS / "cnn_confusion_matrix.png", dpi=150, bbox_inches="tight")
 plt.close()
 print(f"  Saved: {OUT_FIGS / 'cnn_confusion_matrix.png'}")
 
-
-# ── 12. Plot ROC curves ──────────────────────────────────────────────────
 y_bin = label_binarize(all_true, classes=list(range(n_classes)))
 
 fig, ax = plt.subplots(figsize=(8, 6))
@@ -481,8 +455,6 @@ plt.savefig(OUT_FIGS / "cnn_roc_curves.png", dpi=150, bbox_inches="tight")
 plt.close()
 print(f"  Saved: {OUT_FIGS / 'cnn_roc_curves.png'}")
 
-
-# ── 13. Write report ─────────────────────────────────────────────────────
 report = f"""# CNN Raw-IQ RF Fingerprinting Results
 
 ## Model

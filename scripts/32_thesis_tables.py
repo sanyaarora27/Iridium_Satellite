@@ -23,11 +23,9 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUT_TABLES = PROJECT_ROOT / "outputs" / "tables"
 
-
 def fail(message):
     print(f"ERROR: {message}", file=sys.stderr)
     sys.exit(1)
-
 
 def load_csv(name, required_columns=frozenset()):
     """Read a CSV from outputs/tables/ and validate it has the expected columns."""
@@ -53,8 +51,6 @@ def load_csv(name, required_columns=frozenset()):
         )
     return rows
 
-
-# ══════════════════════════════════════════════════════════════════════════
 # TABLE 1: MODEL COMPARISON
 #
 # Long ("tidy") format: one row per (model, evaluation_protocol, metric).
@@ -64,10 +60,8 @@ def load_csv(name, required_columns=frozenset()):
 # computed. Every row here traces to exactly one cell in one source CSV
 # (see source_csv), and a metric that isn't available for a given
 # model/protocol is simply absent rather than filled in.
-# ══════════════════════════════════════════════════════════════════════════
 
 comparison_rows = []
-
 
 def emit(model, protocol, metric, value, source_csv):
     if value is None or str(value).strip() == "":
@@ -82,8 +76,6 @@ def emit(model, protocol, metric, value, source_csv):
         }
     )
 
-
-# --- classifier_comparison.csv ---------------------------------------------
 # Stratified 80/20 split + 5-fold StratifiedKFold CV on the train split
 # (see scripts/05_train_classifiers.py). This supersedes model_results.csv,
 # an older output of the now-archived archive/04_train_classifiers.py with
@@ -113,7 +105,6 @@ for r in cc_rows:
         "classifier_comparison.csv",
     )
 
-# --- pass_aware_results.csv -------------------------------------------------
 # Pass/session-aware grouped cross-validation (see
 # scripts/06_pass_aware_evaluation.py) — folds are grouped by satellite
 # pass rather than shuffled, so the split tests generalisation to a new
@@ -140,7 +131,6 @@ for r in pa_rows:
         "pass_aware_results.csv",
     )
 
-# --- mlp_results.csv --------------------------------------------------------
 # Feature-based PyTorch MLP (scripts/27_mlp_features.py), trained on the
 # same 28-feature set as script 05, but a distinct implementation from the
 # scikit-learn "Neural Net (MLP)" rows above — kept as separate model labels
@@ -152,7 +142,6 @@ for r in mlp_rows:
     emit(model, protocol, "accuracy", r["accuracy"], "mlp_results.csv")
     emit(model, protocol, "macro_f1", r["macro_f1"], "mlp_results.csv")
 
-# --- cnn_results.csv ---------------------------------------------------------
 # 1D-CNN on raw IQ bursts, 3-fold cross-session GroupKFold
 # (scripts/22_cnn_raw_iq.py). Per-fold rows remain in cnn_results.csv for
 # traceability, while this comparison table uses only the aggregate mean.
@@ -170,7 +159,6 @@ for r in cnn_mean_rows:
     emit(CNN_MODEL, protocol, "n_train", r["n_train"], "cnn_results.csv")
     emit(CNN_MODEL, protocol, "n_test", r["n_test"], "cnn_results.csv")
 
-# --- authentication_metrics.csv ---------------------------------------------
 # Per-satellite FRR/FAR/EER (scripts/20_authentication_metrics.py), reframing
 # classification as an authentication decision. model_accuracy/model_EER are
 # validated as constant across the per-satellite rows for a given feature set,
@@ -209,8 +197,6 @@ with open(OUT_TABLES / "model_comparison.csv", "w", newline="") as f:
     w.writerows(comparison_rows)
 print(f"Saved: {OUT_TABLES / 'model_comparison.csv'}  ({len(comparison_rows)} rows)")
 
-
-# ══════════════════════════════════════════════════════════════════════════
 # TABLE 2: FEATURE TABLE
 #
 # Definitions/groupings below are configuration facts taken directly from
@@ -221,9 +207,7 @@ print(f"Saved: {OUT_TABLES / 'model_comparison.csv'}  ({len(comparison_rows)} ro
 # of sync with the extraction code. R^2-vs-level values and leakage
 # verdicts are joined in from the existing analysis at run time rather
 # than copied as literals.
-# ══════════════════════════════════════════════════════════════════════════
 
-# --- v1: 04_extract_features.py -> outputs/tables/features.csv (28 features) --
 FEATURES_V1 = [
     ("mean_I", "Time-domain amplitude and shape", "mean(I)",
      "May reflect a small DC offset introduced by the modulator on the I arm; could also be receiver-side estimation noise."),
@@ -283,7 +267,6 @@ FEATURES_V1 = [
      "Primarily a structural/protocol property rather than a hardware-specific measure."),
 ]
 
-# --- v2: 15_extract_features_v2.py -> outputs/tables/features_v2.csv (26) ---
 FEATURES_V2 = [
     ("cfo_hz", "Carrier frequency offset & oscillator (4th-power method)", "mean(inst. freq. of z^4) / 4",
         "Mean carrier frequency offset. This can contain contributions from both transmitter oscillator error and "
@@ -341,7 +324,6 @@ FEATURES_V2 = [
      "Distribution shape of the amplitude-normalised Q samples; recomputed on normalised data to avoid conflation with the raw-power features in v1."),
 ]
 
-# --- v3: 17_extract_features_v3.py -> outputs/tables/features_v3.csv (20) --
 FEATURES_V3 = [
     ("ampm_correlation", "AM/PM conversion", "corr(residual phase, amplitude)",
      "Zero for an ideal amplifier; a non-zero value can be influenced by AM/PM conversion in the transmit power amplifier."),
@@ -399,7 +381,6 @@ FEATURE_SETS = [
      "classifiers reported in model_comparison.csv."),
 ]
 
-# --- validate every hardcoded feature name against the real CSV header -----
 for source_script, csv_name, defs, _used in FEATURE_SETS:
     path = OUT_TABLES / csv_name
     if not path.exists():
@@ -425,19 +406,15 @@ for source_script, csv_name, defs, _used in FEATURE_SETS:
             f"is not actually produced by {source_script}."
         )
 
-# --- channel-dominance R^2 (v1 only — no equivalent analysis exists for v2/v3) --
 channel_dominance_rows = load_csv("channel_dominance.csv", {"feature", "r2_vs_level"})
 r2_by_feature = {r["feature"]: r["r2_vs_level"] for r in channel_dominance_rows}
 
-# --- leakage audit: drives both the excluded-metadata rows and their category --
 leakage_rows = load_csv("leakage_audit.csv", {"column", "accuracy", "chance", "verdict"})
-
 
 def leakage_category(verdict):
     if "leak" in verdict.lower():
         return "A. Confirmed leakage / shortcut variable"
     return "B. Contextual/channel/receiver metadata (excluded; not demonstrated as leakage)"
-
 
 METADATA_DESCRIPTIONS = {
     "global_index": (

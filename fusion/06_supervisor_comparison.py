@@ -26,7 +26,6 @@ import pandas as pd
 
 from _shared import FUSION_FIGURES_DIR, FUSION_REPORTS_DIR, FUSION_TABLES_DIR
 
-
 INPUT = FUSION_TABLES_DIR / "layer_comparison.csv"
 
 SCENARIOS = [
@@ -66,7 +65,6 @@ ARCHITECTURES = [
     "HMAC + freshness",
     "Full fusion",
 ]
-
 
 def _row_from_counts(
     scenario: str,
@@ -129,7 +127,6 @@ def _row_from_counts(
         )
 
     return row
-
 
 def build_architecture_comparison(raw: pd.DataFrame) -> pd.DataFrame:
     rows = []
@@ -205,7 +202,6 @@ def build_architecture_comparison(raw: pd.DataFrame) -> pd.DataFrame:
 
     return pd.DataFrame(rows)
 
-
 def build_full_fusion_table(comparison: pd.DataFrame) -> pd.DataFrame:
     full = comparison[comparison["architecture"] == "Full fusion"].copy()
     rows = []
@@ -248,7 +244,6 @@ def build_full_fusion_table(comparison: pd.DataFrame) -> pd.DataFrame:
 
     return pd.DataFrame(rows)
 
-
 def build_ideal_table(comparison: pd.DataFrame) -> pd.DataFrame:
     full = comparison[comparison["architecture"] == "Full fusion"]
     rows = []
@@ -272,7 +267,6 @@ def build_ideal_table(comparison: pd.DataFrame) -> pd.DataFrame:
         )
 
     return pd.DataFrame(rows)
-
 
 def plot_observed_vs_ideal(
     comparison: pd.DataFrame,
@@ -363,7 +357,6 @@ def plot_observed_vs_ideal(
     fig.savefig(path, dpi=200, bbox_inches="tight")
     plt.close(fig)
 
-
 def plot_architecture_comparison(
     comparison: pd.DataFrame,
     path: Path,
@@ -424,7 +417,6 @@ def plot_architecture_comparison(
     fig.tight_layout(rect=[0, 0, 1, 0.95])
     fig.savefig(path, dpi=200, bbox_inches="tight")
     plt.close(fig)
-
 
 def write_report(
     comparison: pd.DataFrame,
@@ -548,7 +540,6 @@ def write_report(
 
     path.write_text("\n".join(lines), encoding="utf-8")
 
-
 def main() -> None:
     print("=" * 80)
     print("SUPERVISOR / THESIS FUSION COMPARISON")
@@ -634,7 +625,6 @@ def main() -> None:
     print("  ATTACK  + ACCEPT = false acceptance / attack passed")
     print("  ATTACK  + FLAG = escalation, not proven attack detection")
     print("  ATTACK  + REJECT = blocked by the decision rule")
-
 
 if __name__ == "__main__":
     main()

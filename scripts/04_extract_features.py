@@ -2,10 +2,6 @@
 04_extract_features.py
 ======================
 
-Steps 6 + 7 of the supervisor's 29 June task list:
-extract hand-crafted features from every message of the five chosen
-satellites and write them to a single CSV ready for classifier training.
-
 INPUT
 -----
     data/raw/samples_NNN.npy   raw IQ messages, shape (n, 11000, 2) float32
@@ -59,8 +55,6 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-# Allow "python scripts/04_extract_features.py" from the project root
-# as well as running from inside scripts/.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from iq_utils import (
     SAMPLE_RATE_HZ,
@@ -71,23 +65,14 @@ from iq_utils import (
     to_complex,
 )
 
-# ─── PATHS ───────────────────────────────────────────────────────────────────
 PROJECT_ROOT  = Path(__file__).resolve().parent.parent
 DATA_DIR      = PROJECT_ROOT / "data" / "raw"
 OUTPUT_TABLES = PROJECT_ROOT / "outputs" / "tables"
 OUTPUT_TABLES.mkdir(parents=True, exist_ok=True)
 
-# ─── CONFIG ──────────────────────────────────────────────────────────────────
-# The five most-sampled satellites (chosen in the exploration step;
-# each has 1,180-1,282 messages, so class balance is good).
 TARGET_SATELLITES = [92, 85, 87, 51, 109]
-
-# Occupied bandwidth: the frequency span containing this fraction of the
-# total signal power (0.99 = the standard "99% occupied bandwidth").
 OBW_POWER_FRACTION = 0.99
 
-
-# ─── FEATURE EXTRACTION ──────────────────────────────────────────────────────
 def extract_features(message: np.ndarray) -> dict:
     """
     Compute all 28 features for ONE message of shape (n_samples, 2).
@@ -95,26 +80,24 @@ def extract_features(message: np.ndarray) -> dict:
     Every feature has its formula in a comment next to it. If you cannot
     explain a line here to your supervisor, stop and ask before running.
     """
-    i = message[:, 0].astype(np.float64)   # in-phase channel
-    q = message[:, 1].astype(np.float64)   # quadrature channel
-    z = to_complex(message)                # z = I + jQ
-    amp = amplitude(z)                     # |z| = sqrt(I^2 + Q^2)
+    i = message[:, 0].astype(np.float64)
+    q = message[:, 1].astype(np.float64)
+    z = to_complex(message)
+    amp = amplitude(z)
 
     f = {}
 
-    # ── Time-domain statistics (10) ─────────────────────────────────────
-    f["mean_I"] = np.mean(i)               # sum(I) / n
+    f["mean_I"] = np.mean(i)
     f["mean_Q"] = np.mean(q)
-    f["var_I"]  = np.var(i)                # mean((I - mean_I)^2)
+    f["var_I"]  = np.var(i)
     f["var_Q"]  = np.var(q)
-    f["std_I"]  = np.std(i)                # sqrt(var_I)
+    f["std_I"]  = np.std(i)
     f["std_Q"]  = np.std(q)
     f["max_I"]  = np.max(i)
     f["max_Q"]  = np.max(q)
     f["min_I"]  = np.min(i)
     f["min_Q"]  = np.min(q)
 
-    # ── Distribution shape (4) ──────────────────────────────────────────
     # Skewness: third standardised moment, mean((x-mu)^3) / sigma^3.
     #   Asymmetry of the sample distribution — nonzero under asymmetric
     #   amplifier clipping / DC offset.
@@ -122,10 +105,9 @@ def extract_features(message: np.ndarray) -> dict:
     #   0 for Gaussian; clipping lowers it, impulsive noise raises it.
     f["skew_I"] = stats.skew(i)
     f["skew_Q"] = stats.skew(q)
-    f["kurt_I"] = stats.kurtosis(i)        # Fisher definition (Gaussian = 0)
+    f["kurt_I"] = stats.kurtosis(i)
     f["kurt_Q"] = stats.kurtosis(q)
 
-    # ── Robust statistics (4) ───────────────────────────────────────────
     # Median and IQR are outlier-resistant counterparts of mean and std:
     # IQR = 75th percentile - 25th percentile.
     p25_i, p75_i = np.percentile(i, [25, 75])
@@ -135,7 +117,6 @@ def extract_features(message: np.ndarray) -> dict:
     f["iqr_I"]    = p75_i - p25_i
     f["iqr_Q"]    = p75_q - p25_q
 
-    # ── Cross-channel and power (3) ─────────────────────────────────────
     # Signal power: mean instantaneous power, mean(I^2 + Q^2) = mean(|z|^2).
     f["signal_power"] = np.mean(amp ** 2)
     # I/Q ratio: std_I / std_Q. Exactly 1 for a perfectly balanced
@@ -151,7 +132,6 @@ def extract_features(message: np.ndarray) -> dict:
     else:
         f["iq_correlation"] = np.nan
 
-    # ── Envelope / temporal (2) ─────────────────────────────────────────
     # PAPR: peak-to-average power ratio, max(|z|^2) / mean(|z|^2).
     #   Sensitive to amplifier saturation (compressed peaks -> lower PAPR).
     f["papr"] = np.max(amp ** 2) / f["signal_power"] if f["signal_power"] > 0 else np.nan
@@ -160,12 +140,11 @@ def extract_features(message: np.ndarray) -> dict:
     # content of the in-phase waveform.
     f["zero_crossing_rate"] = np.mean(np.diff(np.signbit(i)) != 0)
 
-    # ── Frequency domain (5) — ONE shared FFT ───────────────────────────
     # All five spectral features are computed from a single FFT call.
     # This matters for speed (the FFT is the most expensive operation
     # per message) and for consistency (they all describe one spectrum).
     freqs, mag = fft_spectrum(z, SAMPLE_RATE_HZ)
-    power = mag ** 2                       # power spectrum |X(f)|^2
+    power = mag ** 2
     total_power = np.sum(power)
 
     # Mean FFT magnitude: mean(|X(f)|) over all bins.
@@ -203,15 +182,12 @@ def extract_features(message: np.ndarray) -> dict:
 
     return f
 
-
-# ─── MAIN ────────────────────────────────────────────────────────────────────
 def main() -> None:
     t_start = time.time()
     print("=" * 70)
     print("Feature extraction — Steps 6 + 7")
     print("=" * 70)
 
-    # ─── 1. Labels: which messages belong to the target satellites? ───
     ra_sat_files = discover_segments(DATA_DIR, "ra_sat")
     all_ids = np.concatenate([np.load(f) for f in ra_sat_files])
     target_mask = np.isin(all_ids, TARGET_SATELLITES)
@@ -221,7 +197,6 @@ def main() -> None:
     for sat in TARGET_SATELLITES:
         print(f"  Sat {sat:>3d}: {int(np.sum(all_ids == sat)):,} messages")
 
-    # ─── 2. Map global indices to (segment, local row) from real shapes ───
     samples_files = discover_segments(DATA_DIR, "samples")
     offsets = segment_offsets(samples_files)
     if offsets[-1] != len(all_ids):
@@ -231,12 +206,10 @@ def main() -> None:
             f"do not describe the same dataset."
         )
 
-    # ─── 3. Extract features segment by segment ───
     print()
     rows = []
     for seg_idx, seg_path in enumerate(samples_files):
         seg_lo, seg_hi = offsets[seg_idx], offsets[seg_idx + 1]
-        # Global indices of target messages inside this segment
         in_seg = target_global_indices[
             (target_global_indices >= seg_lo) & (target_global_indices < seg_hi)
         ]
@@ -251,7 +224,7 @@ def main() -> None:
 
         for g in in_seg:
             local = int(g - seg_lo)
-            message = np.asarray(segment[local])   # copy ONE row out of the mmap
+            message = np.asarray(segment[local])
             feats = extract_features(message)
             rows.append({
                 "global_index": int(g),
@@ -261,9 +234,8 @@ def main() -> None:
 
         print(f"done ({time.time() - t_seg:.1f} s)")
 
-    # ─── 4. Assemble DataFrame and validate ───
     df = pd.DataFrame(rows)
-    n_features = df.shape[1] - 2   # minus global_index and satellite_id
+    n_features = df.shape[1] - 2
     print()
     print(f"Feature matrix: {df.shape[0]:,} rows x {n_features} features")
 
@@ -285,13 +257,11 @@ def main() -> None:
     for sat, count in df["satellite_id"].value_counts().sort_index().items():
         print(f"  Sat {sat:>3d}: {count:,}")
 
-    # ─── 5. Write CSV ───
     out_path = OUTPUT_TABLES / "features.csv"
     df.to_csv(out_path, index=False)
     print(f"\nSaved: {out_path.relative_to(PROJECT_ROOT)}")
     print(f"Total time: {time.time() - t_start:.1f} s")
     print("=" * 70)
-
 
 if __name__ == "__main__":
     main()

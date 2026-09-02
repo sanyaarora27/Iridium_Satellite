@@ -50,8 +50,6 @@ DEVICE = "cpu"
 np.random.seed(SEED)
 torch.manual_seed(SEED)
 
-
-# ── 1. Load and extract features ─────────────────────────────────────────
 print("=" * 70)
 print("Step 1 — Loading data and extracting features")
 print("=" * 70)
@@ -125,8 +123,6 @@ print(f"\n  Total: {len(X)} samples, {n_features} features")
 for s in TARGET_SATS:
     print(f"  Sat {s}: {(all_labels == s).sum()}")
 
-
-# ── 2. MLP Model ─────────────────────────────────────────────────────────
 class FeatureDataset(Dataset):
     def __init__(self, X, y):
         self.X = torch.tensor(X, dtype=torch.float32)
@@ -135,7 +131,6 @@ class FeatureDataset(Dataset):
         return len(self.y)
     def __getitem__(self, idx):
         return self.X[idx], self.y[idx]
-
 
 class MLP(nn.Module):
     """
@@ -153,8 +148,6 @@ class MLP(nn.Module):
     def forward(self, x):
         return self.net(x)
 
-
-# ── 3. Training function ─────────────────────────────────────────────────
 def train_mlp(train_idx, test_idx, label, X, y):
     scaler = StandardScaler()
     X_tr = scaler.fit_transform(X[train_idx])
@@ -225,8 +218,6 @@ def train_mlp(train_idx, test_idx, label, X, y):
     print(f"    ► {label}: accuracy={best_acc:.4f}, macro-F1={f1:.4f}")
     return best_acc, f1, best_preds, best_true, history
 
-
-# ── 4. Evaluate: stratified + cross-session ──────────────────────────────
 print("\n" + "=" * 70)
 print("Step 2 — Stratified 5-fold CV")
 print("=" * 70)
@@ -275,8 +266,6 @@ cross_acc = accuracy_score(cross_true, cross_preds)
 cross_f1 = f1_score(cross_true, cross_preds, average="macro")
 print(f"\n  ═══ Cross-session overall: accuracy={cross_acc:.4f}, macro-F1={cross_f1:.4f}")
 
-
-# ── 5. Summary ───────────────────────────────────────────────────────────
 print("\n" + "=" * 70)
 print("SUMMARY")
 print("=" * 70)
@@ -290,8 +279,6 @@ print(f"\n  Classification Report (cross-session):")
 sat_names = [f"Sat {s}" for s in TARGET_SATS]
 print(classification_report(cross_true, cross_preds, target_names=sat_names))
 
-
-# ── 6. Save ──────────────────────────────────────────────────────────────
 results = [
     {"model": "MLP", "evaluation": "Stratified 5-fold", "accuracy": f"{strat_acc:.4f}",
      "macro_f1": f"{strat_f1:.4f}"},

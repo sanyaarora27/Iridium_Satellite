@@ -1,0 +1,10 @@
+Model,Features used,Accuracy,Macro F1,Notes
+Dummy (chance),none (majority class),0.2084,0.069,Chance reference; predicts majority class only
+Logistic Regression,28 hand-crafted,0.2311,0.2232,Not distinguishable from chance (CI overlaps reference)
+Decision Tree,28 hand-crafted,0.2157,0.2156,Not distinguishable from chance (CI overlaps reference)
+Random Forest,28 hand-crafted,0.236,0.2326,Not distinguishable from chance (CI overlaps reference)
+SVM (RBF),28 hand-crafted,0.2238,0.2179,Not distinguishable from chance (CI overlaps reference)
+k-NN (k=5),28 hand-crafted,0.2141,0.2121,Not distinguishable from chance (CI overlaps reference)
+Naive Bayes,28 hand-crafted,0.2182,0.1886,Not distinguishable from chance (CI overlaps reference)
+Neural Net (MLP),28 hand-crafted,0.2328,0.2308,Not distinguishable from chance (CI overlaps reference)
+Random Forest,"4 channel metadata (level, noise, ra_alt, center_frequency)",0.25060827250608275,0.24809088397812523,Control: no waveform data used at all

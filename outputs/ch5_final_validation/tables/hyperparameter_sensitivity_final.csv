@@ -1,0 +1,6 @@
+configuration,params,cv_accuracy_mean,cv_accuracy_std,heldout_test_accuracy
+max_depth_8,"{""max_depth"": 8}",0.24097488472563441,0.007800231004159135,0.24087591240875914
+min_samples_leaf_5,"{""min_samples_leaf"": 5}",0.23975870993410564,0.007584316001895089,
+final_default,{},0.23468730424583836,0.005993258457055674,
+100_trees,"{""n_estimators"": 100}",0.23326886557979762,0.011010275330660983,
+300_trees,"{""n_estimators"": 300}",0.23225409081462856,0.009175344107982191,

@@ -58,24 +58,20 @@ SIM_BASE_TIME = 1_700_000_000
 TOTP_INTERVAL_SECONDS = 30
 TOTP_VALID_WINDOW = 1
 
-
 def derive_hmac_key(sat_id: int) -> bytes:
     material = f"{SIM_MASTER_SEED}:hmac:{int(sat_id)}".encode("utf-8")
     return hashlib.sha256(material).digest()
-
 
 def derive_totp_secret(sat_id: int) -> str:
     material = f"{SIM_MASTER_SEED}:totp:{int(sat_id)}".encode("utf-8")
     raw = hashlib.sha256(material).digest()[:20]
     return base64.b32encode(raw).decode("ascii")
 
-
 def get_totp(sat_id: int) -> pyotp.TOTP:
     return pyotp.TOTP(
         derive_totp_secret(sat_id),
         interval=TOTP_INTERVAL_SECONDS,
     )
-
 
 def build_simulated_payload(message_id: int, true_satellite: int) -> str:
     """
@@ -84,7 +80,6 @@ def build_simulated_payload(message_id: int, true_satellite: int) -> str:
     This is not an Iridium protocol payload.
     """
     return f"telemetry:{int(message_id)}:source:{int(true_satellite)}"
-
 
 def canonical_message(
     message_id: int,
@@ -95,7 +90,6 @@ def canonical_message(
     return (
         f"{int(message_id)}|{int(claimed_satellite)}|{nonce}|{payload}"
     ).encode("utf-8")
-
 
 def compute_mac(
     key: bytes,
@@ -111,7 +105,6 @@ def compute_mac(
         payload=payload,
     )
     return hmac.new(key, msg, hashlib.sha256).hexdigest()
-
 
 def verify_mac(
     key: bytes,
@@ -130,7 +123,6 @@ def verify_mac(
     )
     return hmac.compare_digest(expected, str(mac))
 
-
 def corrupt_mac(mac: str) -> str:
     mac = str(mac)
     if not mac:
@@ -138,10 +130,8 @@ def corrupt_mac(mac: str) -> str:
     replacement = "0" if mac[-1].lower() != "0" else "1"
     return mac[:-1] + replacement
 
-
 def generate_nonce(sat_id: int, at_time: int) -> str:
     return get_totp(sat_id).at(int(at_time))
-
 
 def verify_freshness(
     sat_id: int,
@@ -171,10 +161,8 @@ def verify_freshness(
 
     return False
 
-
 def higher_layer_decision(hmac_pass: bool, freshness_pass: bool) -> str:
     return "pass" if bool(hmac_pass) and bool(freshness_pass) else "reject"
-
 
 def alternate_satellites(true_satellite: int) -> list[int]:
     """Return every allowed false claimed identity for a true satellite."""
@@ -183,7 +171,6 @@ def alternate_satellites(true_satellite: int) -> list[int]:
     if not alternatives:
         raise ValueError(f"No alternate satellite available for {true_satellite}")
     return alternatives
-
 
 def choose_alternate_satellite(true_satellite: int) -> int:
     """Return one deterministic alternate identity for single-case controls."""

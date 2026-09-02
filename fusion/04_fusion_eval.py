@@ -41,7 +41,6 @@ CLAIMED = COLUMN_MAP["claimed_sat"]
 PRED = COLUMN_MAP["predicted_sat"]
 CONF = COLUMN_MAP["confidence"]
 
-
 def decide(
     rf_match: bool,
     hmac_pass: bool,
@@ -54,7 +53,6 @@ def decide(
     if rf_match:
         return "accept"
     return "flag"
-
 
 def decision_reason(
     rf_match: bool,
@@ -74,7 +72,6 @@ def decision_reason(
         "Higher-layer authentication passed and RF-derived physical-layer "
         "evidence agreed with the claimed satellite"
     )
-
 
 def build_fusion_population(
     evidence: pd.DataFrame,
@@ -207,7 +204,6 @@ def build_fusion_population(
 
     return population
 
-
 def summarise(population: pd.DataFrame) -> pd.DataFrame:
     rows = []
 
@@ -236,7 +232,6 @@ def summarise(population: pd.DataFrame) -> pd.DataFrame:
         )
 
     return pd.DataFrame(rows)
-
 
 def build_decision_table(population: pd.DataFrame) -> pd.DataFrame:
     """Select representative computed rows for human-readable inspection."""
@@ -268,7 +263,6 @@ def build_decision_table(population: pd.DataFrame) -> pd.DataFrame:
         rows.append(row)
 
     return pd.DataFrame(rows)
-
 
 def write_text_summary(
     summary: pd.DataFrame,
@@ -349,7 +343,6 @@ def write_text_summary(
 
     out_path.write_text("\n".join(lines), encoding="utf-8")
 
-
 def make_figure(summary: pd.DataFrame, out_path: Path) -> None:
     """Simple full-fusion distribution; thesis comparison figures come from 06."""
     focus_scenarios = [
@@ -414,7 +407,6 @@ def make_figure(summary: pd.DataFrame, out_path: Path) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=180, bbox_inches="tight")
     plt.close(fig)
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -487,7 +479,6 @@ def main() -> None:
     print(f"Decision examples:  {decision_path}")
     print(f"Text summary:       {text_path}")
     print(f"Decision figure:    {figure_path}")
-
 
 if __name__ == "__main__":
     main()

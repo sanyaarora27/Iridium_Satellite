@@ -44,7 +44,6 @@ N_TREES = 200
 N_BOOT = 1000
 NON_FEATURE = {"sample_id", "global_index", "index", "Unnamed: 0", "satellite_id"}
 
-
 def bootstrap_ci(correct, n=N_BOOT, seed=SEED):
     rng = np.random.default_rng(seed)
     m = len(correct)
@@ -54,7 +53,6 @@ def bootstrap_ci(correct, n=N_BOOT, seed=SEED):
         scores[i] = correct[ix].mean()
     return float(np.percentile(scores, 2.5)), float(np.percentile(scores, 97.5))
 
-
 def exact_mcnemar(correct_a, correct_b):
     # A wrong/B right and A right/B wrong
     n01 = int(np.sum((~correct_a) & correct_b))
@@ -63,12 +61,10 @@ def exact_mcnemar(correct_a, correct_b):
     p = 1.0 if n == 0 else float(binomtest(n10, n, 0.5).pvalue)
     return n01, n10, p
 
-
 def rf(**kwargs):
     params = dict(n_estimators=N_TREES, random_state=SEED, n_jobs=-1)
     params.update(kwargs)
     return RandomForestClassifier(**params)
-
 
 def main():
     if not FEATURES.exists():
@@ -242,7 +238,6 @@ def main():
 
     print(report)
     print(f"Outputs written to: {OUT}")
-
 
 if __name__ == "__main__":
     main()

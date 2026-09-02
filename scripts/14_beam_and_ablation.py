@@ -67,8 +67,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-
-# --- PATHS ----------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_RAW     = PROJECT_ROOT / "data" / "raw"
 FEATURES_CSV = PROJECT_ROOT / "outputs" / "tables" / "features.csv"
@@ -81,18 +79,15 @@ for d in (OUT_TABLES, OUT_FIGURES, OUT_REPORTS):
 RANDOM_SEED   = 42
 TEST_FRACTION = 0.20
 N_BOOTSTRAP   = 2000
-MIN_BEAM_SIZE = 250          # minimum messages for a beam to be analysed
+MIN_BEAM_SIZE = 250
 
 NON_FEATURE_COLUMNS = {"sample_id", "global_index", "index",
                        "Unnamed: 0", "satellite_id"}
 METADATA_COLUMNS = ["level", "noise", "ra_alt", "center_frequency"]
 
-
-# --- LOADING -------------------------------------------------------------
 def load_metadata_column(column: str) -> np.ndarray | None:
     files = sorted(DATA_RAW.glob(f"{column}_*.npy"))
     return np.concatenate([np.load(f) for f in files]) if files else None
-
 
 def load_all() -> tuple[pd.DataFrame, list[str]]:
     df = pd.read_csv(FEATURES_CSV)
@@ -106,7 +101,6 @@ def load_all() -> tuple[pd.DataFrame, list[str]]:
             df[f"meta_{col}"] = full[rows]
     return df, features
 
-
 def clean_matrix(X: np.ndarray) -> np.ndarray:
     """Replace non-finite entries with the column median."""
     X = X.astype(float).copy()
@@ -116,8 +110,6 @@ def clean_matrix(X: np.ndarray) -> np.ndarray:
             X[bad, j] = np.nanmedian(X[~bad, j]) if (~bad).any() else 0.0
     return X
 
-
-# --- SHARED EVALUATION ---------------------------------------------------
 def evaluate(X: np.ndarray, y: np.ndarray, seed: int = RANDOM_SEED,
              max_features=None) -> dict:
     """
@@ -172,8 +164,6 @@ def evaluate(X: np.ndarray, y: np.ndarray, seed: int = RANDOM_SEED,
         "n_discordant": n_disc,
     }
 
-
-# --- A. METADATA ABLATION ------------------------------------------------
 def metadata_ablation(df: pd.DataFrame) -> pd.DataFrame:
     """
     Identify which metadata column carries the class-discriminative signal.
@@ -251,8 +241,6 @@ def metadata_ablation(df: pd.DataFrame) -> pd.DataFrame:
 
     return pd.DataFrame(rows)
 
-
-# --- B. WITHIN-BEAM ------------------------------------------------------
 def holm_bonferroni(p_values: list[float]) -> list[bool]:
     """
     Holm-Bonferroni correction for multiple comparisons.
@@ -272,7 +260,6 @@ def holm_bonferroni(p_values: list[float]) -> list[bool]:
         else:
             break
     return reject
-
 
 def within_beam_analysis(df: pd.DataFrame,
                          features: list[str]) -> pd.DataFrame:
@@ -302,8 +289,6 @@ def within_beam_analysis(df: pd.DataFrame,
         table = table.sort_values("margin", ascending=False).reset_index(drop=True)
     return table
 
-
-# --- PLOT ----------------------------------------------------------------
 def plot_beams(table: pd.DataFrame, path: Path) -> None:
     if not len(table):
         return
@@ -341,8 +326,6 @@ def plot_beams(table: pd.DataFrame, path: Path) -> None:
     plt.savefig(path, dpi=110, bbox_inches="tight")
     plt.close(fig)
 
-
-# --- MAIN ----------------------------------------------------------------
 def main() -> None:
     print("=" * 72)
     print("Metadata ablation and within-beam analysis")
@@ -351,7 +334,6 @@ def main() -> None:
     df, features = load_all()
     print(f"\n{len(df):,} messages, {len(features)} features")
 
-    # ---- A ---------------------------------------------------------------
     print("\n" + "-" * 72)
     print("A. METADATA ABLATION - which column carries the signal?")
     print("-" * 72)
@@ -373,7 +355,6 @@ def main() -> None:
             print(f"\n  Strongest single column: {best['columns']} "
                   f"({best['accuracy']:.4f}, p = {best['p_value']:.4f})")
 
-    # ---- B ---------------------------------------------------------------
     print("\n" + "-" * 72)
     print("B. WITHIN-BEAM CLASSIFICATION (all beams)")
     print("-" * 72)
@@ -417,7 +398,6 @@ def main() -> None:
             print("     transmitter information. The single-beam result in")
             print("     script 09 does not replicate across beams.")
 
-    # ---- Outputs ---------------------------------------------------------
     print("\n" + "-" * 72)
     print("Writing outputs...")
     if len(ablation):
@@ -482,7 +462,6 @@ beams at alpha = 0.05 would be expected to yield one spurious result.
     (OUT_REPORTS / "beam_and_ablation.md").write_text(md)
     print("  outputs/reports/beam_and_ablation.md")
     print("=" * 72)
-
 
 if __name__ == "__main__":
     main()

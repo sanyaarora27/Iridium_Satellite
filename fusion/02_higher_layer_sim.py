@@ -36,7 +36,6 @@ from _shared import (
     verify_mac,
 )
 
-
 def build_baseline_verdicts(evidence: pd.DataFrame) -> pd.DataFrame:
     id_col = COLUMN_MAP["id"]
     true_col = COLUMN_MAP["true_sat"]
@@ -98,7 +97,6 @@ def build_baseline_verdicts(evidence: pd.DataFrame) -> pd.DataFrame:
 
     return pd.DataFrame(rows)
 
-
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -146,7 +144,6 @@ def main() -> None:
             "Baseline failure detected. Genuine simulated traffic should pass "
             "both higher-layer checks."
         )
-
 
 if __name__ == "__main__":
     main()

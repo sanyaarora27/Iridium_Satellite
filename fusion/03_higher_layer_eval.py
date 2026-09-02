@@ -58,7 +58,6 @@ EXPECTED = {
     "stolen_key": (True, True, "pass"),
 }
 
-
 def _fresh_once(sat_id: int, nonce: str, sim_time: int) -> bool:
     """Evaluate one independent freshness use with clean replay state."""
     seen: set[tuple[int, str]] = set()
@@ -68,7 +67,6 @@ def _fresh_once(sat_id: int, nonce: str, sim_time: int) -> bool:
         at_time=sim_time,
         seen_nonces=seen,
     )
-
 
 def _record(
     scenario: str,
@@ -108,7 +106,6 @@ def _record(
         "test_passed": bool(test_passed),
     }
 
-
 def build_attack_cases(
     evidence: pd.DataFrame,
     baseline: pd.DataFrame,
@@ -135,9 +132,6 @@ def build_attack_cases(
         genuine_mac = str(row["sim_mac"])
         genuine_key = derive_hmac_key(genuine_claim)
 
-        # ------------------------------------------------------------------
-        # Genuine: both checks should pass.
-        # ------------------------------------------------------------------
         hmac_ok = verify_mac(
             genuine_key,
             message_id,
@@ -158,10 +152,7 @@ def build_attack_cases(
             )
         )
 
-        # ------------------------------------------------------------------
-        # Wrong key: MAC is created with another satellite's key while the
         # claimed identity and valid freshness value remain genuine.
-        # ------------------------------------------------------------------
         wrong_signing_key = derive_hmac_key(false_claim)
         wrong_key_mac = compute_mac(
             wrong_signing_key,
@@ -190,12 +181,9 @@ def build_attack_cases(
             )
         )
 
-        # ------------------------------------------------------------------
-        # Tampered claim: the claimed identity is changed. A syntactically
         # valid freshness token is supplied for the false claim so that the
         # HMAC integrity failure is isolated rather than conflated with expiry.
         # The attacker still cannot produce a valid MAC for the altered packet.
-        # ------------------------------------------------------------------
         false_receiver_key = derive_hmac_key(false_claim)
         false_nonce = generate_nonce(false_claim, sim_time)
         hmac_ok = verify_mac(
@@ -218,10 +206,7 @@ def build_attack_cases(
             )
         )
 
-        # ------------------------------------------------------------------
-        # Tampered payload: message content changes but the original MAC and
         # still-valid freshness value are retained.
-        # ------------------------------------------------------------------
         tampered_payload = payload + "|tampered"
         hmac_ok = verify_mac(
             genuine_key,
@@ -243,9 +228,6 @@ def build_attack_cases(
             )
         )
 
-        # ------------------------------------------------------------------
-        # Invalid MAC: tag is corrupted while the packet remains fresh.
-        # ------------------------------------------------------------------
         bad_mac = corrupt_mac(genuine_mac)
         hmac_ok = verify_mac(
             genuine_key,
@@ -267,10 +249,7 @@ def build_attack_cases(
             )
         )
 
-        # ------------------------------------------------------------------
-        # Replay: the same valid authenticated packet is consumed twice.
         # HMAC remains valid; the second freshness verification must fail.
-        # ------------------------------------------------------------------
         replay_hmac_ok = verify_mac(
             genuine_key,
             message_id,
@@ -307,10 +286,7 @@ def build_attack_cases(
             )
         )
 
-        # ------------------------------------------------------------------
-        # Expired freshness: authenticated packet is evaluated sufficiently
         # outside the accepted TOTP window. HMAC stays valid.
-        # ------------------------------------------------------------------
         expired_hmac_ok = verify_mac(
             genuine_key,
             message_id,
@@ -339,11 +315,9 @@ def build_attack_cases(
             )
         )
 
-        # ------------------------------------------------------------------
         # Headline false-identity scenarios.
         # Every real RF observation is tested against ALL four incorrect
         # claimed identities, avoiding dependence on one arbitrary target.
-        # ------------------------------------------------------------------
         for target_claim in alternate_satellites(true_sat):
             target_nonce = generate_nonce(target_claim, sim_time)
             target_payload = build_simulated_payload(message_id, true_sat)
@@ -425,7 +399,6 @@ def build_attack_cases(
 
     return cases
 
-
 def summarise_attack_cases(cases: pd.DataFrame) -> pd.DataFrame:
     summaries = []
 
@@ -452,7 +425,6 @@ def summarise_attack_cases(cases: pd.DataFrame) -> pd.DataFrame:
 
     return pd.DataFrame(summaries)
 
-
 def validate_security_tests(summary: pd.DataFrame) -> None:
     failures = summary[summary["security_test_pass_rate"] != 1.0]
 
@@ -471,7 +443,6 @@ def validate_security_tests(summary: pd.DataFrame) -> None:
         raise AssertionError(
             f"Expected higher-layer scenarios were not generated: {sorted(missing)}"
         )
-
 
 def validate_false_identity_coverage(
     cases: pd.DataFrame,
@@ -500,7 +471,6 @@ def validate_false_identity_coverage(
             raise AssertionError(
                 f"{scenario}: not every message has all four false claims:\n{bad}"
             )
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -564,7 +534,6 @@ def main() -> None:
         f"({len(evidence):,} messages x {len(SATELLITES)-1} incorrect claims = "
         f"{len(evidence)*(len(SATELLITES)-1):,} cases per headline identity scenario)"
     )
-
 
 if __name__ == "__main__":
     main()

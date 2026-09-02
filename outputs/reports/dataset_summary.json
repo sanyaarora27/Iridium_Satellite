@@ -1,0 +1,278 @@
+{
+  "data_directory": "/Users/sanyaarora/Desktop/Surrey/Iridium_Satellite/data/raw",
+  "total_messages": 50000,
+  "n_unique_satellites": 121,
+  "max_messages_per_sat": 1282,
+  "min_messages_per_sat": 1,
+  "top_satellites": [
+    [
+      92,
+      1282
+    ],
+    [
+      85,
+      1277
+    ],
+    [
+      87,
+      1232
+    ],
+    [
+      51,
+      1188
+    ],
+    [
+      109,
+      1184
+    ],
+    [
+      93,
+      1171
+    ],
+    [
+      24,
+      1159
+    ],
+    [
+      111,
+      1157
+    ],
+    [
+      38,
+      1149
+    ],
+    [
+      28,
+      1131
+    ],
+    [
+      104,
+      1091
+    ],
+    [
+      7,
+      1034
+    ],
+    [
+      36,
+      1001
+    ],
+    [
+      16,
+      973
+    ],
+    [
+      114,
+      973
+    ],
+    [
+      22,
+      966
+    ],
+    [
+      26,
+      962
+    ],
+    [
+      69,
+      957
+    ],
+    [
+      99,
+      939
+    ],
+    [
+      115,
+      928
+    ]
+  ],
+  "columns": {
+    "bytes": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000,
+        111
+      ],
+      "dtype": "uint8",
+      "total_size_mb": 5.3
+    },
+    "center_frequency": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "int64",
+      "total_size_mb": 0.4
+    },
+    "confidence": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "int64",
+      "total_size_mb": 0.4
+    },
+    "direction": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "int64",
+      "total_size_mb": 0.4
+    },
+    "level": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "float64",
+      "total_size_mb": 0.4
+    },
+    "magnitude": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "float64",
+      "total_size_mb": 0.4
+    },
+    "msg": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "<U562",
+      "total_size_mb": 107.0
+    },
+    "msg_id": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "int64",
+      "total_size_mb": 0.4
+    },
+    "msg_type": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "<U2",
+      "total_size_mb": 0.4
+    },
+    "n_symbols": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "int64",
+      "total_size_mb": 0.4
+    },
+    "noise": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "float64",
+      "total_size_mb": 0.4
+    },
+    "ra_alt": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "float64",
+      "total_size_mb": 0.4
+    },
+    "ra_cell": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "int64",
+      "total_size_mb": 0.4
+    },
+    "ra_lat": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "float64",
+      "total_size_mb": 0.4
+    },
+    "ra_lon": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "float64",
+      "total_size_mb": 0.4
+    },
+    "ra_sat": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "int64",
+      "total_size_mb": 0.4
+    },
+    "run_id": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "int64",
+      "total_size_mb": 0.4
+    },
+    "sample_count": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "int64",
+      "total_size_mb": 0.4
+    },
+    "sample_rate": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "int64",
+      "total_size_mb": 0.4
+    },
+    "samples": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000,
+        11000,
+        2
+      ],
+      "dtype": "float32",
+      "total_size_mb": 4196.2
+    },
+    "timestamp": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "int64",
+      "total_size_mb": 0.4
+    },
+    "timestamp_global": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "int64",
+      "total_size_mb": 0.4
+    },
+    "uw_start": {
+      "n_segments": 5,
+      "per_segment_shape": [
+        10000
+      ],
+      "dtype": "float64",
+      "total_size_mb": 0.4
+    }
+  }
+}

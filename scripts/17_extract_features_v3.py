@@ -60,7 +60,6 @@ import numpy as np
 import pandas as pd
 from scipy import stats as scipy_stats
 
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR     = PROJECT_ROOT / "data" / "raw"
 OUT_TABLES   = PROJECT_ROOT / "outputs" / "tables"
@@ -70,13 +69,10 @@ TARGET_SATELLITES = [92, 85, 87, 51, 109]
 SAMPLE_RATE_HZ    = 25_000_000
 N_AMP_BINS        = 4          # amplitude quartiles for AM/PM measurement
 
-
 def messages_per_segment() -> int:
     first = sorted(DATA_DIR.glob("ra_sat_*.npy"))[0]
     return int(np.load(first, mmap_mode="r").shape[0])
 
-
-# --- FEATURE EXTRACTION ---------------------------------------------------
 def extract_v3(i_raw: np.ndarray, q_raw: np.ndarray) -> dict:
     """Compute 20 amplifier-nonlinearity features from one message."""
     f: dict = {}
@@ -101,9 +97,7 @@ def extract_v3(i_raw: np.ndarray, q_raw: np.ndarray) -> dict:
     residual_phase = np.angle(z4) / 4.0          # radians
     amp_s = np.abs(z_s)
 
-    # =====================================================================
     # A. AM/PM CONVERSION  (6 features)
-    # =====================================================================
     # In a linear transmitter, phase does not depend on amplitude. Any
     # systematic dependence is introduced by the amplifier, and its shape
     # is characteristic of the individual device.
@@ -147,9 +141,7 @@ def extract_v3(i_raw: np.ndarray, q_raw: np.ndarray) -> dict:
                   "ampm_q4_deg", "ampm_range_deg", "ampm_curvature"):
             f[k] = 0.0
 
-    # =====================================================================
     # B. AM/AM COMPRESSION  (5 features)
-    # =====================================================================
     # An amplifier driven towards saturation clips the envelope peaks. The
     # complementary cumulative distribution of instantaneous power shows
     # this as a shortened tail relative to an undistorted signal.
@@ -169,9 +161,7 @@ def extract_v3(i_raw: np.ndarray, q_raw: np.ndarray) -> dict:
     papr_db = 10.0 * np.log10(np.max(power_ratio) + 1e-30)
     f["papr_deficit_db"] = float(papr_db - 5.0)
 
-    # =====================================================================
     # C. SPECTRAL REGROWTH  (5 features)
-    # =====================================================================
     # Intermodulation products created by nonlinearity fall outside the
     # occupied bandwidth. The power that appears in adjacent bands is a
     # direct measure of amplifier linearity.
@@ -212,9 +202,7 @@ def extract_v3(i_raw: np.ndarray, q_raw: np.ndarray) -> dict:
     # occupied band for the same protocol implies greater regrowth.
     f["occupied_fraction"] = float(w / n)
 
-    # =====================================================================
     # D. CONSTELLATION QUALITY BY AMPLITUDE  (4 features)
-    # =====================================================================
     # Stratifying constellation tightness by amplitude separates distortion
     # that grows with drive level from distortion that does not. A linear
     # transmitter shows similar spread in every stratum.
@@ -238,8 +226,6 @@ def extract_v3(i_raw: np.ndarray, q_raw: np.ndarray) -> dict:
 
     return f
 
-
-# --- INDEX ---------------------------------------------------------------
 def build_index() -> dict:
     sat_files = sorted(DATA_DIR.glob("ra_sat_*.npy"))
     all_sats = np.concatenate([np.load(f) for f in sat_files])
@@ -255,7 +241,6 @@ def build_index() -> dict:
             "satellite_id": int(all_sats[g]),
         })
     return by_segment
-
 
 def main() -> None:
     print("=" * 72)
@@ -316,7 +301,6 @@ def main() -> None:
     print(f"Shape: {df.shape}")
     print("\nNext: python scripts/21_openset_and_domain.py")
     print("=" * 72)
-
 
 if __name__ == "__main__":
     main()

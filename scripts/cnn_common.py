@@ -19,11 +19,9 @@ BURST_LEN = 11000
 MAX_VALID_TS = 5e15
 SESSION_BOUNDARIES = [1940e12, 1995e12]
 
-
 def set_seed(seed: int = 42) -> None:
     np.random.seed(seed)
     torch.manual_seed(seed)
-
 
 def split_inner_validation(
     outer_train_idx,
@@ -55,13 +53,11 @@ def split_inner_validation(
     )
     return inner_train, inner_validation, "stratified train-only split"
 
-
 def select_best_validation_epoch(validation_losses):
     """Select the earliest epoch with the lowest validation loss."""
     if not validation_losses:
         raise ValueError("At least one validation loss is required")
     return min(range(len(validation_losses)), key=lambda epoch: validation_losses[epoch])
-
 
 def assign_session(timestamp, session_boundaries=None):
     if session_boundaries is None:
@@ -70,7 +66,6 @@ def assign_session(timestamp, session_boundaries=None):
         if timestamp < boundary:
             return i
     return len(session_boundaries)
-
 
 def load_raw_iq_data(
     target_sats=None,
@@ -110,7 +105,6 @@ def load_raw_iq_data(
     labels_idx = np.array([sat_to_idx[s] for s in all_labels], dtype=np.int64)
     session_groups = np.array([assign_session(ts) for ts in all_ts])
     return all_iq, labels_idx, all_ts, session_groups, sat_to_idx
-
 
 class IQDataset(Dataset):
     """Complex IQ bursts converted to 2-channel real tensors."""
@@ -161,7 +155,6 @@ class IQDataset(Dataset):
 
         return torch.tensor(x, dtype=torch.float32), torch.tensor(self.labels[idx], dtype=torch.long)
 
-
 class SatCNN(nn.Module):
     """3-block 1D CNN used across the raw-IQ experiments."""
 
@@ -204,7 +197,6 @@ class SatCNN(nn.Module):
         x = self.block3(x)
         x = self.gap(x).squeeze(-1)
         return self.classifier(x)
-
 
 class DualPoolCNN(nn.Module):
     """Alternative 1D-CNN with GAP + GMP for dual-evaluation experiments."""
@@ -258,7 +250,6 @@ class DualPoolCNN(nn.Module):
         x = torch.cat([avg, mx], dim=1)
         return self.classifier(x)
 
-
 class FastCNN(nn.Module):
     """Fast, downsampled architecture used in the quick CNN check."""
 
@@ -288,7 +279,6 @@ class FastCNN(nn.Module):
     def forward(self, x):
         return self.head(self.net(x).squeeze(-1))
 
-
 def train_one_epoch(model, loader, criterion, optimizer, device="cpu"):
     model.train()
     total_loss, correct, total = 0.0, 0, 0
@@ -304,7 +294,6 @@ def train_one_epoch(model, loader, criterion, optimizer, device="cpu"):
         correct += (logits.argmax(1) == y_batch).sum().item()
         total += len(y_batch)
     return total_loss / total, correct / total
-
 
 @torch.no_grad()
 def evaluate(model, loader, criterion=None, device="cpu"):

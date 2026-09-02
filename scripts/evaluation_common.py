@@ -5,14 +5,11 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-
 PASS_GAP_SECONDS = 300
-
 
 def timestamp_global_to_seconds(timestamp_global: np.ndarray) -> np.ndarray:
     """Convert the dataset's nanosecond timestamp_global values to seconds."""
     return np.asarray(timestamp_global, dtype=np.float64) / 1e9
-
 
 def assign_inferred_passes(
     dataframe: pd.DataFrame,

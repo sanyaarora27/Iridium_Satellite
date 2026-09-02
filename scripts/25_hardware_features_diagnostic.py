@@ -34,8 +34,6 @@ SESSION_BOUNDARIES = [1940e12, 1995e12]
 SEED = 42
 np.random.seed(SEED)
 
-
-# ── Load all data ─────────────────────────────────────────────────────────
 print("=" * 70)
 print("Loading all segments...")
 print("=" * 70)
@@ -53,7 +51,7 @@ for seg in range(5):
         all_labels.append(np.full(mask.sum(), sat))
         all_ts.append(ts[mask])
 
-all_iq = np.concatenate(all_iq)       # (N, 11000, 2)
+all_iq = np.concatenate(all_iq)
 all_labels = np.concatenate(all_labels)
 all_ts = np.concatenate(all_ts)
 
@@ -68,8 +66,6 @@ print(f"Total bursts: {len(all_iq)}")
 for s in range(3):
     print(f"  Session {chr(65+s)}: {(sessions == s).sum()}")
 
-
-# ── Feature extraction functions ─────────────────────────────────────────
 
 def extract_cfo_features(iq_batch):
     """
@@ -107,7 +103,6 @@ def extract_cfo_features(iq_batch):
 
         feats.append([cfo_mean, cfo_std, cfo_median, cfo_drift, acf1])
     return np.array(feats)
-
 
 def extract_iq_imbalance_features(iq_batch):
     """
@@ -155,7 +150,6 @@ def extract_iq_imbalance_features(iq_batch):
                       dc_I, dc_Q, dc_magnitude, gain_stability, phase_stability])
     return np.array(feats)
 
-
 def extract_higher_order_cumulants(iq_batch):
     """
     Higher-order cumulants (2nd and 4th order).
@@ -198,7 +192,6 @@ def extract_higher_order_cumulants(iq_batch):
             np.abs(C42), np.angle(C42) if np.abs(C42) > 1e-10 else 0,
         ])
     return np.array(feats)
-
 
 def extract_instantaneous_freq_features(iq_batch):
     """
@@ -249,7 +242,6 @@ def extract_instantaneous_freq_features(iq_batch):
                       phase_noise_mean, phase_noise_std, allan_var, freq_drift])
     return np.array(feats)
 
-
 def extract_cyclostationary_features(iq_batch, symbol_rate=25000, sample_rate=250000):
     """
     Cyclostationary features at the Iridium symbol rate.
@@ -291,8 +283,6 @@ def extract_cyclostationary_features(iq_batch, symbol_rate=25000, sample_rate=25
         feats.append(cycle_feats)
     return np.array(feats)
 
-
-# ── Extract all feature groups ────────────────────────────────────────────
 print("\n" + "=" * 70)
 print("Extracting hardware-targeted features...")
 print("=" * 70)
@@ -332,14 +322,10 @@ feature_groups = {
     "ALL COMBINED (49 feat)":    feat_all,
 }
 
-
-# ── Clean NaN/Inf ─────────────────────────────────────────────────────────
 for name in feature_groups:
     feature_groups[name] = np.nan_to_num(feature_groups[name], nan=0.0,
                                           posinf=0.0, neginf=0.0)
 
-
-# ── Evaluation ────────────────────────────────────────────────────────────
 
 def evaluate_within_session(feats, y, session_mask, session_name):
     """80/20 stratified split within a single session."""
@@ -357,7 +343,6 @@ def evaluate_within_session(feats, y, session_mask, session_name):
     rf = RandomForestClassifier(n_estimators=300, max_depth=15, random_state=SEED, n_jobs=-1)
     rf.fit(X_tr, y[tr_idx])
     return accuracy_score(y[tr_idx], rf.predict(X_tr)), accuracy_score(y[te_idx], rf.predict(X_te))
-
 
 def evaluate_cross_session(feats, y, groups):
     """3-fold GroupKFold by session."""
@@ -378,8 +363,6 @@ def evaluate_cross_session(feats, y, groups):
     all_true = np.concatenate(all_true)
     return accuracy_score(all_true, all_preds), f1_score(all_true, all_preds, average="macro")
 
-
-# ── Run evaluations ──────────────────────────────────────────────────────
 print("\n" + "=" * 70)
 print("WITHIN-SESSION evaluation (Session A, 80/20 split)")
 print("Can the features discriminate at all?")
@@ -406,7 +389,6 @@ for name, feats in feature_groups.items():
     print(f"{name:<35} {acc:>10.3f} {f1:>10.3f}{marker}")
     cross_results[name] = (acc, f1)
 
-# ── Also try Gradient Boosting on best combined features ─────────────────
 print("\n" + "=" * 70)
 print("GRADIENT BOOSTING on combined features (cross-session)")
 print("=" * 70)
@@ -429,8 +411,6 @@ gb_acc = accuracy_score(all_true, all_preds)
 gb_f1 = f1_score(all_true, all_preds, average="macro")
 print(f"  GBM cross-session: accuracy={gb_acc:.4f}, macro-F1={gb_f1:.4f}")
 
-
-# ── Feature importance on combined set ────────────────────────────────────
 print("\n" + "=" * 70)
 print("TOP 15 FEATURES by importance (Random Forest, full dataset)")
 print("=" * 70)
@@ -464,8 +444,6 @@ top_idx = np.argsort(importances)[::-1][:15]
 for rank, i in enumerate(top_idx):
     print(f"  {rank+1:2d}. {feat_names[i]:<25s} importance={importances[i]:.4f}")
 
-
-# ── Summary ───────────────────────────────────────────────────────────────
 print("\n" + "=" * 70)
 print("SUMMARY")
 print("=" * 70)

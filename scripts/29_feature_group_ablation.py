@@ -39,10 +39,7 @@ from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 
-
-# ---------------------------------------------------------------------------
 # PATHS / CONFIG
-# ---------------------------------------------------------------------------
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -67,14 +64,11 @@ NON_FEATURE_COLUMNS = {
     "satellite_id",
 }
 
-
-# ---------------------------------------------------------------------------
 # PREDEFINED FEATURE GROUPS
 #
 # Groups may overlap intentionally.
 # Example: std_I is both a time-domain statistic and strongly amplitude
 # dependent. Each ablation asks a different question.
-# ---------------------------------------------------------------------------
 
 TIME_DOMAIN = [
     "mean_I", "mean_Q",
@@ -112,10 +106,7 @@ IQ_TEMPORAL = [
     "zero_crossing_rate",
 ]
 
-
-# ---------------------------------------------------------------------------
 # HELPERS
-# ---------------------------------------------------------------------------
 
 def make_model() -> Pipeline:
     """
@@ -131,7 +122,6 @@ def make_model() -> Pipeline:
         )),
     ])
 
-
 def prepare_X(df: pd.DataFrame, features: list[str]) -> np.ndarray:
     """
     Convert selected columns to numeric matrix.
@@ -141,7 +131,6 @@ def prepare_X(df: pd.DataFrame, features: list[str]) -> np.ndarray:
         [np.inf, -np.inf], np.nan
     )
     return X.to_numpy()
-
 
 def authentication_metrics(
     y_true: np.ndarray,
@@ -182,7 +171,6 @@ def authentication_metrics(
     pdetection = 1.0 - mean_frr
 
     return pdetection, mean_frr, mean_far
-
 
 def eer_metrics(
     y_true: np.ndarray,
@@ -230,7 +218,6 @@ def eer_metrics(
 
     return float(best_eer), float(best_threshold)
 
-
 def evaluate(
     df: pd.DataFrame,
     features: list[str],
@@ -271,7 +258,6 @@ def evaluate(
         "eer_threshold": float(eer_threshold),
     }
 
-
 def select_top10_training_only(
     df: pd.DataFrame,
     all_features: list[str],
@@ -303,10 +289,7 @@ def select_top10_training_only(
 
     return table.head(10)["feature"].tolist(), table
 
-
-# ---------------------------------------------------------------------------
 # MAIN
-# ---------------------------------------------------------------------------
 
 def main() -> None:
 
@@ -350,10 +333,8 @@ def main() -> None:
                 f"{group_name} contains missing features: {missing}"
             )
 
-    # ---------------------------------------------------------------
-    # One split created ONCE and reused for every ablation.
-    # ---------------------------------------------------------------
-
+        # One split created ONCE and reused for every ablation.
+    
     indices = np.arange(len(df))
 
     train_idx, test_idx = train_test_split(
@@ -368,10 +349,8 @@ def main() -> None:
         f"| seed={RANDOM_SEED}"
     )
 
-    # ---------------------------------------------------------------
-    # Top-10 selection from TRAINING DATA ONLY.
-    # ---------------------------------------------------------------
-
+        # Top-10 selection from TRAINING DATA ONLY.
+    
     top10, ranking = select_top10_training_only(
         df, all_features, train_idx, y
     )
@@ -389,10 +368,8 @@ def main() -> None:
         ].iloc[0]
         print(f"  {rank:2d}. {name:<25s} {imp:.5f}")
 
-    # ---------------------------------------------------------------
-    # Experiments
-    # ---------------------------------------------------------------
-
+        # Experiments
+    
     experiments = [
         {
             "experiment": "All 28 v1 features",
@@ -495,10 +472,8 @@ def main() -> None:
 
     results = pd.DataFrame(rows)
 
-    # ---------------------------------------------------------------
-    # Deltas relative to all-feature baseline.
-    # ---------------------------------------------------------------
-
+        # Deltas relative to all-feature baseline.
+    
     baseline = results.iloc[0]
 
     results["delta_accuracy_pp"] = (
@@ -519,10 +494,8 @@ def main() -> None:
         - baseline["false_acceptance_rate"]
     ) * 100.0
 
-    # ---------------------------------------------------------------
-    # Save table
-    # ---------------------------------------------------------------
-
+        # Save table
+    
     table_path = OUT_TABLES / "feature_group_ablation.csv"
     results.to_csv(table_path, index=False)
 
@@ -546,10 +519,8 @@ def main() -> None:
     compact_path = OUT_TABLES / "feature_group_ablation_summary.csv"
     compact.to_csv(compact_path, index=False)
 
-    # ---------------------------------------------------------------
-    # Plot: accuracy and macro-F1
-    # ---------------------------------------------------------------
-
+        # Plot: accuracy and macro-F1
+    
     labels = results["experiment"].tolist()
     x = np.arange(len(labels))
     width = 0.36
@@ -582,10 +553,8 @@ def main() -> None:
     fig.savefig(figure_path, dpi=160, bbox_inches="tight")
     plt.close(fig)
 
-    # ---------------------------------------------------------------
-    # Markdown report
-    # ---------------------------------------------------------------
-
+        # Markdown report
+    
     report_path = OUT_REPORTS / "feature_group_ablation.md"
 
     lines = [
@@ -661,10 +630,8 @@ def main() -> None:
 
     report_path.write_text("\n".join(lines))
 
-    # ---------------------------------------------------------------
-    # Console summary
-    # ---------------------------------------------------------------
-
+        # Console summary
+    
     print("\n" + "=" * 80)
     print("FINAL ABLATION SUMMARY")
     print("=" * 80)
@@ -700,7 +667,6 @@ def main() -> None:
         "  No explicit phase statistics exist in v1, so no "
         "phase-ablation result is fabricated."
     )
-
 
 if __name__ == "__main__":
     main()

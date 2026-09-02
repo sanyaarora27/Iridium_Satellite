@@ -86,7 +86,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
-# ─── PATHS ───────────────────────────────────────────────────────────────────
 PROJECT_ROOT   = Path(__file__).resolve().parent.parent
 FEATURES_CSV   = PROJECT_ROOT / "outputs" / "tables" / "features.csv"
 OUTPUT_TABLES  = PROJECT_ROOT / "outputs" / "tables"
@@ -95,7 +94,6 @@ OUTPUT_REPORTS = PROJECT_ROOT / "outputs" / "reports"
 for d in (OUTPUT_TABLES, OUTPUT_FIGURES, OUTPUT_REPORTS):
     d.mkdir(parents=True, exist_ok=True)
 
-# ─── CONFIG ──────────────────────────────────────────────────────────────────
 RANDOM_STATE = 42     # fixed seed -> reproducible split and models
 TEST_FRACTION = 0.20  # 80% train / 20% test
 CV_FOLDS = 5
@@ -155,7 +153,6 @@ MODELS = [
                    random_state=RANDOM_STATE), True),
 ]
 
-
 def build_pipeline(estimator, needs_scaling: bool) -> Pipeline:
     """Wrap an estimator in a Pipeline, with StandardScaler only if needed."""
     steps = []
@@ -163,7 +160,6 @@ def build_pipeline(estimator, needs_scaling: bool) -> Pipeline:
         steps.append(("scaler", StandardScaler()))
     steps.append(("model", estimator))
     return Pipeline(steps)
-
 
 def bootstrap_accuracy_ci(y_true: np.ndarray,
                           y_pred: np.ndarray,
@@ -183,15 +179,12 @@ def bootstrap_accuracy_ci(y_true: np.ndarray,
         float(np.percentile(scores, 97.5)),
     )
 
-
-# ─── MAIN ────────────────────────────────────────────────────────────────────
 def main() -> None:
     t_start = time.time()
     print("=" * 70)
     print("Classifier training and comparison — Steps 8-10")
     print("=" * 70)
 
-    # ─── 1. Load features ───
     if not FEATURES_CSV.exists():
         raise FileNotFoundError(
             f"{FEATURES_CSV} not found - run 04_extract_features.py first.")
@@ -205,7 +198,6 @@ def main() -> None:
     print(f"Loaded {X.shape[0]:,} messages, {X.shape[1]} features, "
           f"{len(class_labels)} classes: {list(class_labels)}")
 
-    # ─── 2. Stratified train/test split ───
     X_train, X_test, y_train, y_test = train_test_split(
         X, y,
         test_size=TEST_FRACTION,
@@ -214,7 +206,6 @@ def main() -> None:
     )
     print(f"Train: {len(y_train):,} messages   Test: {len(y_test):,} messages")
 
-    # ─── 3. Train, cross-validate, and evaluate each model ───
     cv = StratifiedKFold(n_splits=CV_FOLDS, shuffle=True,
                          random_state=RANDOM_STATE)
     results = []
@@ -265,7 +256,6 @@ def main() -> None:
             + classification_report(y_test, y_pred, digits=4, zero_division=0)
         )
 
-    # ─── 4. Comparison table ───
     comparison = pd.DataFrame(results).sort_values(
         "test_accuracy", ascending=False)
     comp_path = OUTPUT_TABLES / "classifier_comparison.csv"
@@ -277,7 +267,6 @@ def main() -> None:
     rep_path = OUTPUT_REPORTS / "classification_reports.txt"
     rep_path.write_text("\n\n".join(reports_text))
 
-    # ─── 5. Confusion matrices (one per model, grid sized automatically) ───
     # Rows = true satellite, columns = predicted satellite. The diagonal
     # is correct classifications; off-diagonal cells show exactly WHICH
     # satellites get confused with each other - far more informative for
@@ -303,7 +292,6 @@ def main() -> None:
     fig.savefig(cm_path, dpi=120, bbox_inches="tight")
     plt.close(fig)
 
-    # ─── 6. Feature importance (Step 10) ───
     # Random Forest importance = mean decrease in Gini impurity: how much
     # each feature's splits improve class purity, averaged over all trees.
     # KNOWN CAVEAT (be ready to say this in the meeting): impurity
@@ -334,13 +322,11 @@ def main() -> None:
     fig.savefig(fi_path, dpi=120, bbox_inches="tight")
     plt.close(fig)
 
-    # ─── 7. Summary ───
     print("\nOutputs written:")
     for p in (comp_path, rep_path, cm_path, fi_path, imp_path):
         print(f"  {p.relative_to(PROJECT_ROOT)}")
     print(f"Total time: {time.time() - t_start:.1f} s")
     print("=" * 70)
-
 
 if __name__ == "__main__":
     main()

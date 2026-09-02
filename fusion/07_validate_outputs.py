@@ -6,7 +6,6 @@ import pandas as pd
 
 from _shared import FUSION_TABLES_DIR, SATELLITES
 
-
 def main() -> None:
     evidence = pd.read_csv(FUSION_TABLES_DIR / "evidence.csv")
     cases = pd.read_csv(FUSION_TABLES_DIR / "higher_layer_attack_cases.csv")
@@ -108,7 +107,6 @@ def main() -> None:
     print(f"Total simulated fusion cases: {len(population):,}")
     print(f"Identity-spoof cases: {expected_identity_cases:,}")
     print(f"Stolen-key cases: {expected_identity_cases:,}")
-
 
 if __name__ == "__main__":
     main()

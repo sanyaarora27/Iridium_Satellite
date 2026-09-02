@@ -1,13 +1,31 @@
-
-# Generated Results
-tables/
-figures/
-reports/
-# OS / IDE cruft
-.DS_Store
-scripts/.DS_Store
-__pycache__/
-.qodo/
-
-# Raw IQ data - large, third-party, not for redistribution
+# Raw dataset
 data/
+
+# Duplicate/local image folder
+Images/
+
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# macOS
+.DS_Store
+
+# Local development/tool files
+.claude/
+.qodo/
+.vscode/
+.idea/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Archives
+*.zip
+
+# Temporary files
+*.tmp
+*.log

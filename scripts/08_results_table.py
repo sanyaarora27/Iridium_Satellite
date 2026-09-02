@@ -47,8 +47,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-
-# --- PATHS ----------------------------------------------------------------
 PROJECT_ROOT  = Path(__file__).resolve().parent.parent
 DATA_RAW      = PROJECT_ROOT / "data" / "raw"
 FEATURES_CSV  = PROJECT_ROOT / "outputs" / "tables" / "features.csv"
@@ -64,12 +62,9 @@ NON_FEATURE_COLUMNS = {"sample_id", "global_index", "index",
                        "Unnamed: 0", "satellite_id"}
 METADATA_COLUMNS = ["level", "noise", "ra_alt", "center_frequency"]
 
-
-# --- Metadata-only control -----------------------------------------------
 def load_metadata_column(column: str) -> np.ndarray | None:
     files = sorted(DATA_RAW.glob(f"{column}_*.npy"))
     return np.concatenate([np.load(f) for f in files]) if files else None
-
 
 def metadata_only_control(df: pd.DataFrame) -> dict | None:
     """
@@ -121,8 +116,6 @@ def metadata_only_control(df: pd.DataFrame) -> dict | None:
         "columns":  columns,
     }
 
-
-# --- Notes ---------------------------------------------------------------
 def build_note(model: str, accuracy: float, ci_low: float,
                ci_high: float, chance_high: float) -> str:
     """
@@ -136,8 +129,6 @@ def build_note(model: str, accuracy: float, ci_low: float,
         return "Exceeds chance (CI clears the chance reference)"
     return "Not distinguishable from chance (CI overlaps reference)"
 
-
-# --- MAIN ----------------------------------------------------------------
 def main() -> None:
     print("=" * 70)
     print("Step 9 results table")
@@ -243,7 +234,6 @@ This table documents both the result and the reason for it.
     print("  outputs/tables/results_table.csv")
     print("  outputs/reports/results_table.md")
     print("=" * 70)
-
 
 if __name__ == "__main__":
     main()

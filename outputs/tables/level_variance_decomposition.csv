@@ -1,0 +1,5 @@
+predictor,type,r2,n
+receiver noise floor,continuous,0.1197842727074178,6163
+beam (ra_cell),categorical,0.08882886259873657,6163
+elevation angle,continuous,0.038504151402146594,3165
+satellite identity,categorical,0.0006378228631272802,6163

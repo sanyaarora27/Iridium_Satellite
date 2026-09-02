@@ -1,0 +1,32 @@
+model,feature,impersonation_rate,attacker_control,note
+28 waveform features,kurt_I,0.20559610705596107,indirect,derived from the waveform
+28 waveform features,papr,0.1956609894566099,indirect,derived from the waveform
+28 waveform features,min_I,0.19383617193836172,indirect,derived from the waveform
+28 waveform features,kurt_Q,0.19363341443633414,indirect,derived from the waveform
+28 waveform features,median_I,0.19343065693430658,indirect,derived from the waveform
+28 waveform features,skew_Q,0.19261962692619627,indirect,derived from the waveform
+28 waveform features,zero_crossing_rate,0.1924168694241687,indirect,derived from the waveform
+28 waveform features,occupied_bandwidth,0.1924168694241687,indirect,derived from the waveform
+28 waveform features,iqr_I,0.1922141119221411,indirect,derived from the waveform
+28 waveform features,iq_correlation,0.19180859691808597,indirect,derived from the waveform
+28 waveform features,max_I,0.19120032441200324,indirect,derived from the waveform
+28 waveform features,skew_I,0.19099756690997566,indirect,derived from the waveform
+28 waveform features,min_Q,0.19099756690997566,indirect,derived from the waveform
+28 waveform features,peak_frequency,0.1907948094079481,indirect,derived from the waveform
+28 waveform features,std_I,0.1907948094079481,indirect,derived from the waveform
+28 waveform features,max_Q,0.19059205190592052,indirect,derived from the waveform
+28 waveform features,mean_I,0.19059205190592052,indirect,derived from the waveform
+28 waveform features,median_Q,0.19018653690186538,indirect,derived from the waveform
+28 waveform features,signal_power,0.1899837793998378,indirect,derived from the waveform
+28 waveform features,fft_mean_magnitude,0.1897810218978102,indirect,derived from the waveform
+28 waveform features,mean_Q,0.18957826439578265,indirect,derived from the waveform
+28 waveform features,iqr_Q,0.18917274939172748,indirect,derived from the waveform
+28 waveform features,bandwidth,0.18896999188969993,indirect,derived from the waveform
+28 waveform features,iq_ratio,0.18876723438767234,indirect,derived from the waveform
+28 waveform features,std_Q,0.18876723438767234,indirect,derived from the waveform
+28 waveform features,var_Q,0.1883617193836172,indirect,derived from the waveform
+28 waveform features,var_I,0.18815896188158962,indirect,derived from the waveform
+28 waveform features,spectral_centroid,0.1875506893755069,indirect,derived from the waveform
+receiver-side metadata,level,0.19971613949716138,indirect,follows from transmit power and range
+receiver-side metadata,noise,0.19180859691808597,none,"receiver noise floor, not attacker-set"
+receiver-side metadata,center_frequency,0.16666666666666666,direct,attacker chooses transmit frequency

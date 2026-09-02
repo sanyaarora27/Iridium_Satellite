@@ -1,0 +1,2 @@
+comparison,dummy_wrong_rf_right,dummy_right_rf_wrong,discordant_total,exact_mcnemar_p,significant_at_0.05
+Random Forest vs most-frequent baseline,245,200,445,0.03687795830393246,True

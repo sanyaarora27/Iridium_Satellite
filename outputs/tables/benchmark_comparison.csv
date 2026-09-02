@@ -1,0 +1,6 @@
+system,dataset,n_sats,input,metric,result,evaluation,notes
+SatIQ baseline (reported),SatIQ full,66,Raw IQ,Accuracy,~97%,Random split (within-pass),No cross-pass evaluation reported
+This work: Random Forest,SatIQ subset (5 sats),5,20 features,Accuracy,20.8%,Cross-session GroupKFold,Leakage features removed
+This work: MLP,SatIQ subset (5 sats),5,20 features,Accuracy,23.8%,Cross-session GroupKFold,"3-layer, 128→64→32"
+This work: 1D-CNN,SatIQ subset (5 sats),5,Raw IQ (2×2750),Accuracy,15.6%,Cross-session GroupKFold,"3-block Conv1d, GAP"
+This work: Multi-layer framework,SatIQ subset (5 sats),5,CNN + HMAC,Spoof detection,100%,Scenario simulation,CNN + HMAC + fusion

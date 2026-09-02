@@ -61,8 +61,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-
-# --- PATHS ----------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_RAW     = PROJECT_ROOT / "data" / "raw"
 FEATURES_CSV = PROJECT_ROOT / "outputs" / "tables" / "features.csv"
@@ -72,8 +70,6 @@ OUT_REPORTS  = PROJECT_ROOT / "outputs" / "reports"
 for d in (OUT_TABLES, OUT_FIGURES, OUT_REPORTS):
     d.mkdir(parents=True, exist_ok=True)
 
-
-# --- CONFIG ---------------------------------------------------------------
 TEST_FRACTION = 0.20
 RANDOM_SEED   = 42
 
@@ -85,8 +81,6 @@ NON_FEATURE_COLUMNS = {"sample_id", "global_index", "index",
 # segment files named e.g. level_000.npy ... level_004.npy
 METADATA_COLUMNS = ["level", "noise", "ra_alt", "center_frequency"]
 
-
-# --- STEP 1: LOAD FEATURES -----------------------------------------------
 def load_features() -> tuple[pd.DataFrame, list[str]]:
     """Read features.csv and identify the genuine feature columns."""
     if not FEATURES_CSV.exists():
@@ -96,8 +90,6 @@ def load_features() -> tuple[pd.DataFrame, list[str]]:
     feature_names = [c for c in df.columns if c not in NON_FEATURE_COLUMNS]
     return df, feature_names
 
-
-# --- STEP 2: ATTACH CHANNEL METADATA -------------------------------------
 def load_metadata_column(column: str) -> np.ndarray | None:
     """
     Load one metadata column by concatenating its segment files in order.
@@ -110,7 +102,6 @@ def load_metadata_column(column: str) -> np.ndarray | None:
     if not files:
         return None
     return np.concatenate([np.load(f) for f in files])
-
 
 def attach_metadata(df: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     """
@@ -143,8 +134,6 @@ def attach_metadata(df: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
 
     return df, attached
 
-
-# --- STEP 3: RANDOM FOREST FEATURE IMPORTANCE ----------------------------
 def compute_feature_importance(X: np.ndarray,
                                y: np.ndarray,
                                feature_names: list[str]) -> pd.DataFrame:
@@ -186,8 +175,6 @@ def compute_feature_importance(X: np.ndarray,
     table.attrs["accuracy"] = accuracy
     return table
 
-
-# --- STEP 4: CHANNEL-DOMINANCE ANALYSIS ----------------------------------
 def compute_channel_dominance(df: pd.DataFrame,
                               feature_names: list[str],
                               level_column: str) -> pd.DataFrame:
@@ -234,8 +221,6 @@ def compute_channel_dominance(df: pd.DataFrame,
             .sort_values("r2_vs_level", ascending=False)
             .reset_index(drop=True))
 
-
-# --- STEP 5: THE METADATA-ONLY CONTROL -----------------------------------
 def metadata_only_control(df: pd.DataFrame,
                           metadata_columns: list[str],
                           y: np.ndarray) -> dict:
@@ -273,8 +258,6 @@ def metadata_only_control(df: pd.DataFrame,
         "columns":  metadata_columns,
     }
 
-
-# --- STEP 6: PLOTS -------------------------------------------------------
 def plot_feature_importance(table: pd.DataFrame, path: Path) -> None:
     """Horizontal bar chart of all features, most important at the top."""
     fig, ax = plt.subplots(figsize=(9, 9))
@@ -289,7 +272,6 @@ def plot_feature_importance(table: pd.DataFrame, path: Path) -> None:
     plt.tight_layout()
     plt.savefig(path, dpi=110, bbox_inches="tight")
     plt.close(fig)
-
 
 def plot_channel_dominance(dominance: pd.DataFrame,
                            importance: pd.DataFrame,
@@ -336,8 +318,6 @@ def plot_channel_dominance(dominance: pd.DataFrame,
     plt.savefig(path, dpi=110, bbox_inches="tight")
     plt.close(fig)
 
-
-# --- STEP 7: REPORT ------------------------------------------------------
 def write_report(importance: pd.DataFrame,
                  dominance: pd.DataFrame,
                  control: dict | None,
@@ -472,8 +452,6 @@ merely uninformative but noisier proxies for the same underlying geometry.
     with open(path, "w") as f:
         f.write(md)
 
-
-# --- MAIN ----------------------------------------------------------------
 def main() -> None:
     print("=" * 70)
     print("Feature importance and channel-dominance analysis")
@@ -553,7 +531,6 @@ def main() -> None:
     print("\n" + "=" * 70)
     print("Done.")
     print("=" * 70)
-
 
 if __name__ == "__main__":
     main()

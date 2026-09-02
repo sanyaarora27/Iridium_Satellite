@@ -39,10 +39,8 @@ import pandas as pd
 
 from _shared import FUSION_REPORTS_DIR, FUSION_TABLES_DIR
 
-
 def _count(mask: pd.Series) -> int:
     return int(mask.sum())
-
 
 def build_comparison(population: pd.DataFrame) -> pd.DataFrame:
     rows = []
@@ -109,14 +107,12 @@ def build_comparison(population: pd.DataFrame) -> pd.DataFrame:
 
     return pd.DataFrame(rows)
 
-
 def to_markdown_table(df: pd.DataFrame) -> str:
     display = df.copy()
     rate_cols = [c for c in display.columns if c.endswith("_rate")]
     for col in rate_cols:
         display[col] = display[col].map(lambda x: f"{100*x:.1f}%")
     return display.to_markdown(index=False)
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -188,7 +184,6 @@ def main() -> None:
     print(display.to_string(index=False))
     print(f"\nSaved: {args.csv_out}")
     print(f"Saved: {args.md_out}")
-
 
 if __name__ == "__main__":
     main()

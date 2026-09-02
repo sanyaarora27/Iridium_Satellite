@@ -65,8 +65,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-
-# --- PATHS ----------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_RAW     = PROJECT_ROOT / "data" / "raw"
 V1_CSV       = PROJECT_ROOT / "outputs" / "tables" / "features.csv"
@@ -85,8 +83,6 @@ NON_FEATURE   = {"sample_id", "global_index", "index",
 
 RECEIVER_LAT, RECEIVER_LON, RECEIVER_ALT = 51.7548, -1.2544, 60.0
 
-
-# --- LOADING -------------------------------------------------------------
 def load_and_merge() -> tuple[pd.DataFrame, list[str], list[str]]:
     """Merge v1 and v2 feature tables on global_index."""
     if not V2_CSV.exists():
@@ -108,7 +104,6 @@ def load_and_merge() -> tuple[pd.DataFrame, list[str], list[str]]:
     print(f"  merged on global_index: {len(merged):,} rows")
     return merged, v1_features, v2_features
 
-
 def clean(X: np.ndarray) -> np.ndarray:
     X = X.astype(float).copy()
     for j in range(X.shape[1]):
@@ -116,7 +111,6 @@ def clean(X: np.ndarray) -> np.ndarray:
         if bad.any():
             X[bad, j] = np.nanmedian(X[~bad, j]) if (~bad).any() else 0.0
     return X
-
 
 def add_elevation(df: pd.DataFrame) -> pd.DataFrame:
     """Elevation angle, for the Doppler-confound check (same method as 06/09)."""
@@ -167,8 +161,6 @@ def add_elevation(df: pd.DataFrame) -> pd.DataFrame:
     df["elevation_deg"] = elev
     return df
 
-
-# --- EVALUATION ----------------------------------------------------------
 def mcnemar(correct_a: np.ndarray, correct_b: np.ndarray) -> float:
     """Exact McNemar p-value for two classifiers on the same test set."""
     n01 = int(np.sum(~correct_a & correct_b))
@@ -177,13 +169,11 @@ def mcnemar(correct_a: np.ndarray, correct_b: np.ndarray) -> float:
         return 1.0
     return float(scipy_stats.binomtest(n10, n01 + n10, 0.5).pvalue)
 
-
 def bootstrap_ci(correct: np.ndarray) -> tuple[float, float]:
     rng = np.random.default_rng(RANDOM_SEED)
     m = len(correct)
     s = [correct[rng.integers(0, m, m)].mean() for _ in range(N_BOOTSTRAP)]
     return float(np.percentile(s, 2.5)), float(np.percentile(s, 97.5))
-
 
 def main() -> None:
     print("=" * 72)
@@ -252,7 +242,6 @@ def main() -> None:
     print(f"\n  v2 vs v1 directly:           p = {p_v1_v2:.4f}   "
           f"{'SIGNIFICANT' if p_v1_v2 < 0.05 else 'not significant'}")
 
-    # ---- v2 feature importance -----------------------------------------
     print("\nStep 4 - v2 feature importance:")
     v2_res = results[2]
     forest = v2_res["model"].named_steps["clf"]
@@ -263,7 +252,6 @@ def main() -> None:
     for _, r in imp.head(8).iterrows():
         print(f"    {r['feature']:<26}{r['importance']:.4f}")
 
-    # ---- Doppler confound check ----------------------------------------
     print("\nStep 5 - Is cfo_hz measuring hardware or geometry?")
     if "cfo_hz" in df.columns and "elevation_deg" in df.columns:
         ok = df["cfo_hz"].notna() & df["elevation_deg"].notna()
@@ -288,7 +276,6 @@ def main() -> None:
             print(f"    Sat {int(s):>3d}: {vals[m].mean():>12,.1f} Hz  "
                   f"(std {vals[m].std():>10,.1f})")
 
-    # ---- Outputs --------------------------------------------------------
     print("\nStep 6 - Writing outputs...")
     table = pd.DataFrame([{k: v for k, v in r.items()
                            if k not in ("correct", "model", "features")}
@@ -384,7 +371,6 @@ reliably here and is left as future work.
     print("  outputs/figures/v1_v2_comparison.png")
     print("  outputs/reports/v1_v2_comparison.md")
     print("=" * 72)
-
 
 if __name__ == "__main__":
     main()

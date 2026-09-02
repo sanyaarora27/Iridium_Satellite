@@ -1,0 +1,3 @@
+model,evaluation,accuracy,macro_f1
+MLP,Stratified 5-fold,0.2564,0.2429
+MLP,Cross-session,0.2381,0.2210

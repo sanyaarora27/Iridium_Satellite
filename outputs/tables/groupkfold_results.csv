@@ -1,0 +1,3 @@
+split,accuracy,std,chance,pass_definition,pass_gap_seconds,timestamp_source,grouping_scope,random_seed,splitter
+random (StratifiedKFold),0.2338179764274655,0.011175166185014284,0.20801563602658493,timestamp_gap,300,timestamp_global,per_satellite,42,StratifiedKFold
+pass-aware (StratifiedGroupKFold),0.15698266629717372,0.03749800325806566,0.013901266870511015,timestamp_gap,300,timestamp_global,per_satellite,42,StratifiedGroupKFold

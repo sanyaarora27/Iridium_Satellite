@@ -1,0 +1,6 @@
+held_out,n_unknown,known_satellites,training_satellites,unknown_satellites,known_test_messages,unknown_test_messages,feature_set,auroc,mean_conf_known,mean_conf_unknown,evaluation_scope,model_name,rf_n_estimators,rf_scaled,imputer,random_seed
+51,1188,"[85, 87, 92, 109]","[85, 87, 92, 109]",[51],995,1188,all combined,0.5205099571933742,0.3446633165829145,0.34084175084175083,open-set held-out satellite AUROC,random_forest,200,False,median,42
+85,1277,"[51, 87, 92, 109]","[51, 87, 92, 109]",[85],978,1277,all combined,0.5070073328176822,0.32842024539877307,0.3266601409553641,open-set held-out satellite AUROC,random_forest,200,False,median,42
+87,1232,"[51, 85, 92, 109]","[51, 85, 92, 109]",[87],987,1232,all combined,0.533028806300083,0.34724924012158054,0.3391396103896104,open-set held-out satellite AUROC,random_forest,200,False,median,42
+92,1282,"[51, 85, 87, 109]","[51, 85, 87, 109]",[92],977,1282,all combined,0.504849047595476,0.3451688843398158,0.34390015600624024,open-set held-out satellite AUROC,random_forest,200,False,median,42
+109,1184,"[51, 85, 87, 92]","[51, 85, 87, 92]",[109],996,1184,all combined,0.5161240400792358,0.3377259036144578,0.3344847972972973,open-set held-out satellite AUROC,random_forest,200,False,median,42

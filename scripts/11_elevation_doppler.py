@@ -66,8 +66,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
-
-# --- PATHS ----------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_RAW     = PROJECT_ROOT / "data" / "raw"
 FEATURES_CSV = PROJECT_ROOT / "outputs" / "tables" / "features.csv"
@@ -77,9 +75,6 @@ OUT_REPORTS  = PROJECT_ROOT / "outputs" / "reports"
 for d in (OUT_TABLES, OUT_FIGURES, OUT_REPORTS):
     d.mkdir(parents=True, exist_ok=True)
 
-
-# --- CONFIG ---------------------------------------------------------------
-# Receiver: rooftop antenna at the University of Oxford (Smailes et al. 2023).
 # The paper does not give exact coordinates; these are Oxford city centre.
 # Elevation angle is insensitive to errors of a few hundred metres when the
 # satellite is ~780 km away, so this approximation is acceptable. State it
@@ -90,7 +85,7 @@ RECEIVER_ALT_M   = 60.0
 
 RANDOM_SEED   = 42
 TEST_FRACTION = 0.20
-MIN_BAND_SIZE = 200        # minimum messages needed to train within a band
+MIN_BAND_SIZE = 200
 
 NON_FEATURE_COLUMNS = {"sample_id", "global_index", "index",
                        "Unnamed: 0", "satellite_id"}
@@ -100,14 +95,11 @@ WGS84_A  = 6378137.0
 WGS84_F  = 1.0 / 298.257223563
 WGS84_E2 = WGS84_F * (2.0 - WGS84_F)
 
-
-# --- STEP 1: LOAD --------------------------------------------------------
 def load_metadata_column(column: str) -> np.ndarray | None:
     files = sorted(DATA_RAW.glob(f"{column}_*.npy"))
     if not files:
         return None
     return np.concatenate([np.load(f) for f in files])
-
 
 def load_everything() -> tuple[pd.DataFrame, list[str]]:
     df = pd.read_csv(FEATURES_CSV)
@@ -130,8 +122,6 @@ def load_everything() -> tuple[pd.DataFrame, list[str]]:
 
     return df, feature_names
 
-
-# --- STEP 2: UNIT DETECTION ----------------------------------------------
 def detect_angle_units(values: np.ndarray, name: str) -> np.ndarray:
     """
     Return angles in DEGREES.
@@ -150,7 +140,6 @@ def detect_angle_units(values: np.ndarray, name: str) -> np.ndarray:
     print(f"    {name}: detected RADIANS "
           f"(range {finite.min():.4f} to {finite.max():.4f}) -> converting")
     return np.degrees(values)
-
 
 def interpret_radial_column(values: np.ndarray) -> tuple[np.ndarray, str]:
     """
@@ -192,12 +181,9 @@ def interpret_radial_column(values: np.ndarray) -> tuple[np.ndarray, str]:
 
     return radius_m, desc
 
-
-# --- POSITION FIELD VALIDATION -------------------------------------------
 EARTH_RADIUS_KM   = 6371.0
 ORBITAL_SPEED_KMS = 7.5        # Iridium, low Earth orbit
 PASS_GAP_S        = 20 * 60
-
 
 def great_circle_km(lat1, lon1, lat2, lon2):
     """Distance along the Earth's surface between two sub-points, in km."""
@@ -205,7 +191,6 @@ def great_circle_km(lat1, lon1, lat2, lon2):
     dp, dl = p2 - p1, np.radians(lon2 - lon1)
     a = np.sin(dp / 2) ** 2 + np.cos(p1) * np.cos(p2) * np.sin(dl / 2) ** 2
     return 2 * EARTH_RADIUS_KM * np.arcsin(np.sqrt(np.clip(a, 0, 1)))
-
 
 def validate_position_fields(df: pd.DataFrame,
                              lat: np.ndarray,
@@ -301,8 +286,6 @@ def validate_position_fields(df: pd.DataFrame,
 
     return result
 
-
-# --- STEP 3: ELEVATION ANGLE ---------------------------------------------
 def geodetic_to_ecef(lat_deg, lon_deg, alt_m):
     """Convert geodetic coordinates to Earth-Centred Earth-Fixed metres."""
     lat = np.radians(lat_deg)
@@ -313,7 +296,6 @@ def geodetic_to_ecef(lat_deg, lon_deg, alt_m):
     y = (N + alt_m) * np.cos(lat) * np.sin(lon)
     z = (N * (1.0 - WGS84_E2) + alt_m) * np.sin(lat)
     return x, y, z
-
 
 def elevation_angle_deg(sat_lat_deg, sat_lon_deg, sat_radius_m) -> np.ndarray:
     """
@@ -357,8 +339,6 @@ def elevation_angle_deg(sat_lat_deg, sat_lon_deg, sat_radius_m) -> np.ndarray:
     horizontal = np.sqrt(east ** 2 + north ** 2)
     return np.degrees(np.arctan2(up, horizontal))
 
-
-# --- STEP 4: PER-BAND CLASSIFICATION -------------------------------------
 def classify_within_band(X: np.ndarray, y: np.ndarray) -> dict | None:
     """Train a Random Forest on one elevation band; return accuracy vs chance."""
     if len(y) < MIN_BAND_SIZE or len(np.unique(y)) < 2:
@@ -397,8 +377,6 @@ def classify_within_band(X: np.ndarray, y: np.ndarray) -> dict | None:
         "n_classes":  len(np.unique(y)),
     }
 
-
-# --- STEP 5: SATELLITE SEPARABILITY (STEP 11) ----------------------------
 def satellite_separability(df: pd.DataFrame,
                            feature_names: list[str]) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
@@ -445,8 +423,6 @@ def satellite_separability(df: pd.DataFrame,
 
     return raw, norm
 
-
-# --- STEP 6: PLOTS -------------------------------------------------------
 def plot_elevation(df: pd.DataFrame, bands: pd.DataFrame, path: Path) -> None:
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
@@ -509,7 +485,6 @@ def plot_elevation(df: pd.DataFrame, bands: pd.DataFrame, path: Path) -> None:
     plt.savefig(path, dpi=110, bbox_inches="tight")
     plt.close(fig)
 
-
 def plot_separability(raw: pd.DataFrame, norm: pd.DataFrame, path: Path) -> None:
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
 
@@ -535,8 +510,6 @@ def plot_separability(raw: pd.DataFrame, norm: pd.DataFrame, path: Path) -> None
     plt.savefig(path, dpi=110, bbox_inches="tight")
     plt.close(fig)
 
-
-# --- MAIN ----------------------------------------------------------------
 def main() -> None:
     print("=" * 70)
     print("Elevation / Doppler analysis and satellite separability")
@@ -546,7 +519,6 @@ def main() -> None:
     df, feature_names = load_everything()
     print(f"  Messages: {len(df):,}   Features: {len(feature_names)}")
 
-    # --- Elevation -------------------------------------------------------
     have_geometry = all(f"meta_{c}" in df.columns
                         for c in ("ra_lat", "ra_lon", "ra_alt"))
     bands_table = pd.DataFrame()
@@ -562,7 +534,6 @@ def main() -> None:
             df["meta_ra_alt"].to_numpy(float))
         print(f"    ra_alt: {radius_desc}")
 
-        # ---- Validate the position fields BEFORE using them -----------
         print("\nStep 3 - Validating position fields against orbital motion...")
         check = validate_position_fields(df, lat, lon)
 
@@ -631,7 +602,6 @@ def main() -> None:
             if abs(rho) > 0.3:
                 print("  => Signal level tracks elevation, as physics predicts.")
 
-        # --- Band experiment (Step 12) -----------------------------------
         if not have_geometry:
             print("\nStep 4 - SKIPPED: elevation could not be validated, so")
             print("  banding by elevation would partition on a quantity that")
@@ -658,7 +628,6 @@ def main() -> None:
                       f"chance={res['chance']:.4f}")
             bands_table = pd.DataFrame(rows)
 
-    # --- Doppler ---------------------------------------------------------
     if "meta_center_frequency" in df.columns:
         print("\nStep 5 - Centre-frequency (Doppler) inspection...")
         cf = df["meta_center_frequency"].to_numpy(float)
@@ -675,7 +644,6 @@ def main() -> None:
                 df.loc[ok, "elevation_deg"], cf[ok.to_numpy()]).statistic)
             print(f"  centre frequency vs elevation: Spearman rho = {rho:+.3f}")
 
-    # --- Separability (Step 11) -----------------------------------------
     print("\nStep 6 - Satellite separability in feature space (Step 11)...")
     raw, norm = satellite_separability(df, feature_names)
 
@@ -709,7 +677,6 @@ def main() -> None:
             med = df.loc[df["satellite_id"] == s, "elevation_deg"].median()
             print(f"    Sat {int(s):>3d}: {med:6.1f} degrees")
 
-    # --- Outputs ---------------------------------------------------------
     print("\nStep 7 - Writing outputs...")
     if len(bands_table):
         bands_table.to_csv(OUT_TABLES / "elevation_bands.csv", index=False)
@@ -726,7 +693,6 @@ def main() -> None:
     print("\n" + "=" * 70)
     print("Done.")
     print("=" * 70)
-
 
 if __name__ == "__main__":
     main()

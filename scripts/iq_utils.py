@@ -23,7 +23,6 @@ import numpy as np
 # Sampling rate of the Watch This Space / SatIQ receivers (25 MS/s).
 SAMPLE_RATE_HZ = 25_000_000
 
-
 def to_complex(message: np.ndarray) -> np.ndarray:
     """
     Convert a raw (n_samples, 2) [I, Q] message into a complex 1-D array.
@@ -36,16 +35,13 @@ def to_complex(message: np.ndarray) -> np.ndarray:
     """
     return message[:, 0].astype(np.float64) + 1j * message[:, 1].astype(np.float64)
 
-
 def amplitude(z: np.ndarray) -> np.ndarray:
     """Instantaneous amplitude |z| = sqrt(I^2 + Q^2)."""
     return np.abs(z)
 
-
 def phase(z: np.ndarray) -> np.ndarray:
     """Instantaneous phase angle(z) = arctan2(Q, I), in radians (-pi, pi]."""
     return np.angle(z)
-
 
 def fft_spectrum(z: np.ndarray, fs: float = SAMPLE_RATE_HZ):
     """
@@ -61,7 +57,6 @@ def fft_spectrum(z: np.ndarray, fs: float = SAMPLE_RATE_HZ):
     freqs = np.fft.fftshift(np.fft.fftfreq(len(z), d=1.0 / fs))
     return freqs, mag
 
-
 def discover_segments(data_dir, column: str) -> list:
     """
     Return the sorted list of .npy segment files for one dataset column,
@@ -72,7 +67,6 @@ def discover_segments(data_dir, column: str) -> list:
     if not files:
         raise FileNotFoundError(f"No '{column}_*.npy' files found in {data_dir}")
     return files
-
 
 def segment_offsets(segment_files: list) -> np.ndarray:
     """
